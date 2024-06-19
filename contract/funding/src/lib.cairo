@@ -11,27 +11,25 @@ trait ISportNetCrowdFunding<TContractState> {
 
 #[starknet::contract]
 mod SportNetCrowdFunding {
-    use starknet::{ContractAddress, get_caller_address, storage_access::StorageBaseAddress};
-
+    use starknet::{get_caller_address, get_contract_address, ContractAddress, SyscallResultTrait};
+    use starknet::syscalls::{call_contract_syscall};
+    use core::serde::Serde;
+    
     #[storage]
     struct Storage {
         // contract owner address
         owner: ContractAddress,
 
+        token_address: ContractAddress,
+
         // athlethe and verified pair
         athletes: LegacyMap::<ContractAddress, bool>,
 
-        // sponsor ID and athlethe pair
-        athlete_sponsors: LegacyMap::<u128, ContractAddress>,
+        // athlethe and verified pair
+        athlete_funded: LegacyMap::<ContractAddress, u128>,
 
-        // sponsor ID and sponsor pair
-        sponsors: LegacyMap::<u128, ContractAddress>,
-
-        // sponsor ID and sponsored amount pair
-        sponsored_amount: LegacyMap::<u128, u128>,
-
-        // sponsor count
-        sponsor_count: u128,
+        // (athelthe,sponsor) tuple and athlethe pair
+        athlete_sponsors: LegacyMap::<(ContractAddress, ContractAddress), u128>,
 
         // campaign ID and amount pair
         campaigns: LegacyMap::<u128, u128>,
@@ -69,7 +67,6 @@ mod SportNetCrowdFunding {
     #[derive(Drop, starknet::Event)]
     struct Sponspored {
         #[key]
-        sponsor_id: u128,
         sponsor: ContractAddress,
         campaign_id: u128,
         athlethe: ContractAddress,
@@ -84,29 +81,27 @@ mod SportNetCrowdFunding {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, owner: ContractAddress) {
+    fn constructor(ref self: ContractState, owner: ContractAddress, token_address: ContractAddress) {
         self.owner.write(owner);
-        self.sponsor_count.write(0);
         self.campaign_count.write(0);
+        self.token_address.write(token_address);
     }
 
     #[abi(embed_v0)]
     impl SportNetCrowdFunding of super::ISportNetCrowdFunding<ContractState> {
         fn athlethe_register(ref self: ContractState) {
             let athlethe: ContractAddress = get_caller_address();
-            if self.athletes.read(athlethe) {
-                panic!("Athlethe already registered!");
-            }
+            assert!(!self.athletes.read(athlethe), "Athlethe already registered!");
             self.athletes.write(athlethe, true);
+            self.athlete_funded.write(athlethe, 0);
 
             self.emit(Registered {athlethe});
         }
 
         fn create_campaign(ref self: ContractState, amount: u128) {
             let athlethe: ContractAddress = get_caller_address();
-            if self.athletes.read(athlethe) {
-                panic!("Athlethe is not registered!");
-            }
+            assert!(self.athletes.read(athlethe), "Athlethe is not registered!");
+            assert!(amount > 0, "Campaign amount cannot be 0");
 
             let campaign_id = self.campaign_count.read();
             self.campaigns.write(campaign_id, amount);
@@ -120,47 +115,61 @@ mod SportNetCrowdFunding {
 
         fn sponsor(ref self: ContractState, campaign_id: u128, amount: u128) {
             let campaign_amount = self.campaigns.read(campaign_id);
-            if campaign_amount == 0 {
-                panic!("Campaign does not exists");
-            }
+            assert!(campaign_amount > 0, "Campaign does not exists");
 
             let collected_amount = self.campaign_amount.read(campaign_id);
             let updated_campaign_amount = collected_amount + amount;
-            if campaign_amount < updated_campaign_amount {
-                panic!("Deposited amount exceeds campaign limit");
-            }
+            assert!(campaign_amount >= updated_campaign_amount,
+                "Deposited amount exceeds campaign limit");
 
-            let sponsor: ContractAddress = get_caller_address();
+            let sponsor = get_caller_address();
             let athlethe = self.athlete_campaigns.read(campaign_id);
 
-            let sponsor_id = self.sponsor_count.read();
-            self.athlete_sponsors.write(sponsor_id, athlethe);
-            self.sponsors.write(sponsor_id, sponsor);
-            self.sponsored_amount.write(sponsor_id, amount);
+            let contract_address = get_contract_address();
+            let mut call_data: Array<felt252> = ArrayTrait::new();
+            Serde::serialize(@sponsor, ref call_data);
+            Serde::serialize(@contract_address, ref call_data);
+            Serde::serialize(@amount, ref call_data);
+
+            let mut res = call_contract_syscall(
+                self.token_address.read(), selector!("transferFrom"), call_data.span()
+            ).unwrap_syscall();
+            let result = Serde::<bool>::deserialize(ref res).unwrap();
+
+            assert!(result, "Transfer Failed!");
+
+            let contributed = self.athlete_sponsors.read((athlethe, sponsor));
+            self.athlete_sponsors.write((athlethe, sponsor), contributed + amount);
+            self.athlete_funded.write(athlethe, self.athlete_funded.read(athlethe) + amount);
             self.campaign_amount.write(campaign_id, updated_campaign_amount);
             self.athlete_campaigns.write(campaign_id, athlethe);
 
-            // TODO: Actual fund transfer from sponsor wallet to this contract
-
-            self.emit(Sponspored {sponsor_id, sponsor, campaign_id, athlethe, amount});
+            self.emit(Sponspored {sponsor, campaign_id, athlethe, amount});
         }
 
         fn claim(ref self: ContractState, campaign_id: u128) {
             let amount = self.campaigns.read(campaign_id);
             let collected_amount = self.campaign_amount.read(campaign_id);
-
-            if amount > collected_amount {
-                panic!("Campaign limit is not reached");
-            }
+            assert!(amount <= collected_amount, "Campaign limit is not reached");
 
             let caller: ContractAddress = get_caller_address();
             let athlethe = self.athlete_campaigns.read(campaign_id);
 
-            if caller != athlethe {
-                panic!("Only athelthe who raised the campaign can claim");
-            }
+            assert!(caller == athlethe,
+                    "Only athelthe who raised the campaign can claim");
 
-            // TODO: Actual fund transfer to athelthe
+            let contract_address = get_contract_address();
+            let mut call_data: Array<felt252> = ArrayTrait::new();
+            Serde::serialize(@contract_address, ref call_data);
+            Serde::serialize(@athlethe, ref call_data);
+            Serde::serialize(@amount, ref call_data);
+
+            let mut res = call_contract_syscall(
+                self.token_address.read(), selector!("transferFrom"), call_data.span()
+            ).unwrap_syscall();
+            let result = Serde::<bool>::deserialize(ref res).unwrap();
+
+            assert!(result, "Claim Failed!");
 
             self.emit(Claimed {campaign_id, athlethe, amount});
         }
