@@ -10,18 +10,25 @@ import { Check, ChevronDown } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { NavContainer } from "@/components/containers/Containers";
 import WalletConnectBar from "@/components/WalletConnectBar";
+import { Button } from "@/components/ui/button";
+import { AlertDialogModal } from "@/components/custom/AlertDialogModal";
+import { useAccount } from "@starknet-react/core";
+import { DialogModal } from "@/components/custom/DialogModal";
+import RegisterAthlete from "../ui/RegisterAthlete";
 
 export const Navbar = () => {
+  const [isAthlete,setIsAthlete]=useState(false);
     const pathname=usePathname();
+    const {address}= useAccount();
     const [selected,setSelected]=useState(()=>{
         if(pathname==="/"){
           return "home"
         }
-        if(pathname.includes("/donate")){
-          return "donate"
+        if(pathname.includes("/sponsor")){
+          return "sponsor"
         }
-        if(pathname.includes("/contact")){
-          return "contact"
+        if(pathname.includes("/bet")){
+          return "bet"
         }
         if(pathname.includes("/about")){
           return "about"
@@ -36,12 +43,12 @@ export const Navbar = () => {
             <Link href={"/"}>
             <li className={` hover:text-uiprimary text-base ${selected==="home"&&"text-uiprimary"}`} onClick={()=>setSelected("home")}>Home</li>
             </Link>
-            <Link href={"/donate"}>
-            <li className={` hover:text-uiprimary text-base ${selected==="donate"&&"text-uiprimary"}`} onClick={()=>setSelected("donate")}>Donate</li>
-            </Link>
-            <Link href={"/contact"}>
-            <li className={` hover:text-uiprimary text-base ${selected==="contact"&&"text-uiprimary"}`} onClick={()=>setSelected("contact")}>Contact Us</li>
-            </Link>
+            {address?(<Link href={"/sponsor"}>
+            <li className={` hover:text-uiprimary text-base ${selected==="sponsor"&&"text-uiprimary"}`} onClick={()=>setSelected("sponsor")}>Sponsor</li>
+            </Link>):(<AlertDialogModal title="Connect Wallet" content="Please connect your wallet to sponsor an athlete" buttonText="Okay"><li className={` hover:text-uiprimary text-base cursor-pointer`}>Sponsor</li></AlertDialogModal>)}
+            {address?(<Link href={"/bet"}>
+            <li className={` hover:text-uiprimary text-base ${selected==="sponsor"&&"text-uiprimary"}`} onClick={()=>setSelected("sponsor")}>Bet</li>
+            </Link>):(<AlertDialogModal title="Connect Wallet" content="Please connect your wallet to bet on athlete" buttonText="Okay"><li className={`hover:text-uiprimary text-base cursor-pointer`}>Bet</li></AlertDialogModal>)}
             <Link href={"/about"}>
             <li className={` hover:text-uiprimary text-base ${selected==="about"&&"text-uiprimary"}`} onClick={()=>setSelected("about")}>
               About
@@ -49,7 +56,9 @@ export const Navbar = () => {
             </Link>
         </ul>
         <div className="flex gap-5 my-auto h-full">
+          {address&&!isAthlete&&<RegisterAthlete/>}
           <WalletConnectBar/>
+          {pathname==="/athlete"&&<Button>Create Campaign</Button>}
         </div>
       </NavContainer>
     );

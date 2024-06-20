@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import { StarknetProvider } from "@/components/starknet-provider";
 import "./globals.css";
 import { Navbar } from "@/components/Shared/navbar/Navbar";
+import { AthleteContextProvider } from "../../context/AthleteDbContext";
+import { UserContextProvider } from "../../context/UserDbContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,10 +20,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-black text-white`}>
         <StarknetProvider>
-          <Navbar/>
-          {children}
+          <AthleteContextProvider>
+            <UserContextProvider>
+              <Navbar/>
+              {children}
+            </UserContextProvider>
+          </AthleteContextProvider>
         </StarknetProvider>
       </body>
     </html>
