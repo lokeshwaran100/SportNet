@@ -14,20 +14,20 @@ pub trait ISportNetBetting<TContractState> {
         minBet: u256,
         deadline: felt252,
     );
-    // fn getMarketCount(self: @TContractState) -> u256;
     fn betOnMarket(ref self: TContractState, marketId: u128, amount: u128);
-    fn resolveMarket(ref self: TContractState, marketId: u256, winningOutcome: u8);
-    fn updateMarketStatus(ref self: TContractState, marketId: u256);
-    fn claimFunds(ref self: TContractState, marketId: u256, receiver: ContractAddress);
-    // fn getMarket(self: @TContractState, marketId: u256) -> Market;
-    // fn getAllMarkets(self: @TContractState) -> Array<Market>;
-    // fn getMarketByCategory(self: @TContractState, category: felt252) -> Array<Market>;
-    // fn getContractOwner(self: @TContractState) -> ContractAddress;
-    // fn getUserMarkets(self: @TContractState, user: ContractAddress) -> Array<Market>;
+    fn resolveMarket(ref self: TContractState, marketId: u128, winningOption: u8);
+    fn claimFunds(ref self: TContractState, marketId: u128, receiver: ContractAddress);
+    fn getMarketCount(ref self: TContractState) -> u128;
+    fn getMarket(ref self: TContractState, marketId: u128) -> SportNetBetting::Market;
+    fn getContractOwner(ref self: TContractState) -> ContractAddress;
+    fn getAllMarkets(ref self: TContractState) -> Array<SportNetBetting::Market>;
+    fn getMarketByCategory(ref self: TContractState, category: felt252) -> Array<SportNetBetting::Market>;
+    fn getUserMarkets(ref self: TContractState, user: ContractAddress) -> Array<SportNetBetting::Market>;
 }
 
 #[starknet::contract]
 pub mod SportNetBetting {
+    use core::array::ArrayTrait;
     use core::traits::Into;
     use core::num::traits::zero::Zero;
     use core::starknet::event::EventEmitter;
@@ -50,14 +50,17 @@ pub mod SportNetBetting {
         // market ID and market details pair
         markets: LegacyMap::<u128, Market>,
 
-        // better count
-        better_count: u128,
+        // beter count
+        beter_count: u128,
 
         // user ID and athlethe pair
-        better_athlete: LegacyMap::<u128, ContractAddress>,
+        beter_athlete: LegacyMap::<u128, ContractAddress>,
 
-        // user ID and donor pair
-        betters: LegacyMap::<u128, ContractAddress>,
+        // user ID and user address pair
+        beters: LegacyMap::<u128, ContractAddress>,
+
+        // user ID and user markets pair
+        beter_markets: LegacyMap::<ContractAddress, Array<Market>>,
 
         // user ID and sponsored amount pair
         bet_amount: LegacyMap::<u128, u128>,
@@ -69,25 +72,25 @@ pub mod SportNetBetting {
         market_amount: LegacyMap::<u128, u128>,
     }
 
-    #[derive(Drop, Serde, starknet::Store)]
+    #[derive(Drop, Serde, Clone, starknet::Store)]
     pub struct Market {
         name: ByteArray,
         description: ByteArray,
         pub athlete: ContractAddress,
-        pub outcomes: (Options, Options),
+        pub outcomes: (Scenarios, Scenarios),
         category: felt252,
         isSettled: bool,
         isActive: bool,
         isVerified: bool,
         deadline: felt252,
         betToken: ContractAddress,
-        winningOutcome: Option<Options>,
+        winningOutcome: Option<Scenarios>,
         pub minBet: u256,
         pub moneyInPool: u256,
     }
 
-    #[derive(Drop, Serde, starknet::Store)]
-    pub struct Options {
+    #[derive(Drop, Serde, Copy, starknet::Store)]
+    pub struct Scenarios {
         name: felt252,
         sharesBought: u256
     }
@@ -97,6 +100,7 @@ pub mod SportNetBetting {
     enum Event {
         CreatedMarket: CreatedMarket,
         BetPlaced: BetPlaced,
+        MarketResolved: MarketResolved,
     }
     #[derive(Drop, starknet::Event)]
     struct CreatedMarket {
@@ -115,12 +119,18 @@ pub mod SportNetBetting {
         athlete: ContractAddress,
         amount: u128,
     }
+    #[derive(Drop, starknet::Event)]
+    struct MarketResolved {
+        #[key]
+        market_id: u128,
+        winningOutcome: Option<Scenarios>,
+    }
 
     #[constructor]
     fn constructor(ref self: ContractState, owner: ContractAddress, crowdfunding: ContractAddress) {
         self.owner.write(owner);
         self.market_count.write(0);
-        self.better_count.write(0);
+        self.beter_count.write(0);
         self.crowfundingContract.write(crowdfunding);
     }
 
@@ -139,8 +149,8 @@ pub mod SportNetBetting {
             deadline: felt252,
         ) {
             let (scenario1, scenario2) = options;
-            let mut token1 = Options { name: scenario1, sharesBought: 0_u256};
-            let mut token2 = Options { name: scenario2, sharesBought: 0_u256};
+            let mut token1 = Scenarios { name: scenario1, sharesBought: 0_u256};
+            let mut token2 = Scenarios { name: scenario2, sharesBought: 0_u256};
 
             let tokens = (token1, token2);
 
@@ -176,40 +186,110 @@ pub mod SportNetBetting {
         }
 
         fn betOnMarket(ref self: ContractState, marketId: u128, amount: u128) {
-            let better: ContractAddress = get_caller_address();
-            if better.is_zero() {
-                panic!("Better is zero address");
+            let beter: ContractAddress = get_caller_address();
+            if beter.is_zero() {
+                panic!("beter is zero address");
             }
 
             let market = self.markets.read(marketId);
-            if !market.isVerified {
+            if !market.clone().isVerified {
                 panic!("Market does not exist");
             }
 
-            if market.isSettled {
+            if market.clone().isSettled {
                 panic!("Market has already been resolved");
             }
 
-            let betterId = self.better_count.read() + 1;
-            self.better_count.write(betterId);
-            self.betters.write(betterId, better);
-            self.better_athlete.write(betterId, market.athlete);
+            let beterId = self.beter_count.read() + 1;
+            self.beter_count.write(beterId);
+            self.beters.write(beterId, beter);
+            self.beter_athlete.write(beterId, market.clone().athlete);
+            let mut bet_markets = self.beter_markets.read(beter);
+            bet_markets.append(market.clone());
+            self.beter_markets.write(beter, bet_markets);
             self.market_amount.write(marketId, self.market_amount.read(marketId) + amount);
-            self.bet_amount.write(betterId, self.bet_amount.read(betterId) + amount);
-            self.emit(BetPlaced {user_id: betterId, user: better, market_id: marketId, athlete: market.athlete, amount});
+            self.bet_amount.write(beterId, self.bet_amount.read(beterId) + amount);
+            self.emit(BetPlaced {user_id: beterId, user: beter, market_id: marketId, athlete: market.athlete, amount});
         }
 
-        fn resolveMarket(ref self: ContractState, marketId: u256, winningOutcome: u8) {}
+        fn resolveMarket(ref self: ContractState, marketId: u128, winningOption: u8) {
+            assert!(get_caller_address() == self.owner.read(), "Only the owner can setlle markets");
+            assert!(winningOption == 0_u8 || winningOption == 1_u8, "Invalid option provided");
+            let mut currentMarket = self.markets.read(marketId);
+            assert!(currentMarket.clone().isActive == true, " Only active markets can be resolved");
+            currentMarket.isActive = false;
+            currentMarket.isSettled = true;
+            let (marketOption1, marketOption2) = currentMarket.clone().outcomes;
+            if winningOption == 0 {
+                currentMarket.winningOutcome = Option::Some(marketOption1);
+            } else {
+                currentMarket.winningOutcome = Option::Some(marketOption2);
+            }
+            self.markets.write(marketId, currentMarket.clone());
+            self.emit(MarketResolved {market_id: marketId, winningOutcome: currentMarket.winningOutcome});
+        }
 
-        fn updateMarketStatus(ref self: ContractState, marketId: u256) {}
+        fn claimFunds(ref self: ContractState, marketId: u128, receiver: ContractAddress) {
+            assert!(marketId <= self.market_count.read(), "Market does not exist");
+            assert!(!receiver.is_zero(), "Receiver cannot be address zero");
+            let market = self.markets.read(marketId);
+            let beter = get_caller_address();
+            let beter_markets = self.beter_markets.read(beter);
+            let mut index: u128 = 0;
+            // loop {
+            //     if index == beter_markets.len() {
+            //         break;
+            //     }
 
-        fn claimFunds(ref self: ContractState, marketId: u256, receiver: ContractAddress) {}
-        // fn getMarketCount(self: @TContractState) -> u256{}
+            //     index = index + 1;
+            // }
+        }
 
-        // fn getMarket(self: @TContractState, marketId: u256) -> Market;
-        // fn getAllMarkets(self: @TContractState) -> Array<Market>;
-        // fn getMarketByCategory(self: @TContractState, category: felt252) -> Array<Market>;
-        // fn getContractOwner(self: @TContractState) -> ContractAddress;
-        // fn getUserMarkets(self: @TContractState, user: ContractAddress) -> Array<Market>;
+        fn getMarketCount(ref self: ContractState) -> u128 {
+            return self.market_count.read();
+        }
+
+        fn getMarket(ref self: ContractState, marketId: u128) -> Market {
+            assert!(marketId <= self.market_count.read(), "Market does not exist");
+            return self.markets.read(marketId);
+        }
+
+        fn getAllMarkets(ref self: ContractState) -> Array<Market> {
+            let mut markets: Array<Market> = ArrayTrait::new();
+            let mut index: u128 = 0;
+            loop {
+                if index == self.market_count.read() {
+                    break;
+                }
+                let currMarket = self.markets.read(index);
+                markets.append(currMarket);
+                index = index + 1;
+            };
+            return markets;
+        }
+
+        fn getMarketByCategory(ref self: ContractState, category: felt252) -> Array<Market> {
+            let mut markets: Array<Market> = ArrayTrait::new();
+            let mut index: u128 = 0;
+            loop {
+                if index == self.market_count.read() {
+                    break;
+                }
+                let currMarket = self.markets.read(index);
+                if currMarket.category == category {
+                    markets.append(currMarket);
+                }
+                index = index + 1;
+            };
+            return markets;
+        }
+
+        fn getContractOwner(ref self: ContractState) -> ContractAddress {
+            return self.owner.read();
+        }
+
+        fn getUserMarkets(ref self: ContractState, user: ContractAddress) -> Array<Market> {
+            return self.beter_markets.read(user);
+        }
     }
 }
