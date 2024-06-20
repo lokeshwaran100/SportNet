@@ -138,6 +138,7 @@ mod SportNetCrowdFunding {
             // ).unwrap_syscall();
             // let result = Serde::<bool>::deserialize(ref res).unwrap();
             let token_address: ContractAddress = self.token_address.read();
+            IERC20Dispatcher{contract_address: token_address}.approve(contract_address, amount);
             let result: bool = IERC20Dispatcher{contract_address: token_address}.transfer_from(sponsor, contract_address, amount);
 
             assert!(result, "Transfer Failed!");
@@ -173,6 +174,7 @@ mod SportNetCrowdFunding {
             // ).unwrap_syscall();
             // let result = Serde::<bool>::deserialize(ref res).unwrap();
             let token_address: ContractAddress = self.token_address.read();
+            IERC20Dispatcher{contract_address: token_address}.approve(athlethe, amount);
             let result: bool = IERC20Dispatcher{contract_address: token_address}.transfer_from(contract_address, athlethe, amount);
 
             assert!(result, "Claim Failed!");
