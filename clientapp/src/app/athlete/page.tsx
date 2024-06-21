@@ -1,10 +1,9 @@
 import React from 'react'
 
 const page = () => {
-  
   return (
-    <div>Sponsor</div>
+    <div>Athlete</div>
   )
 }
 
-export default page
+export default page;

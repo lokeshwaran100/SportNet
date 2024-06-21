@@ -3,16 +3,16 @@ import { DialogModal } from '@/components/custom/DialogModal';
 import { Button } from '@/components/ui/button';
 import { useAthleteContext } from '../../../../context/AthleteContext';
 
-const RegisterAthlete = () => {
-    const [athlete, setAthelete]=useState({
+const RaiseFund = () => {
+    const [campaign, setCampaign]=useState({
         name:'',
         sport: '',
     });
 
-    const { register }=useAthleteContext();
+    const { createCampaign }=useAthleteContext();
 
     const onSubmit=()=>{
-        register(athlete);
+        createCampaign(campaign);
     }
 
     const registerAthleteInput=[
@@ -21,8 +21,8 @@ const RegisterAthlete = () => {
             name:"name",
             label:"Name",
             placeholder:"Enter your Name",
-            value:athlete.name,
-            onChange:(value:string)=>setAthelete({...athlete,name:value})
+            value:campaign.name,
+            onChange: (value:string) => setCampaign({...campaign, name: value })
         },
         {
             type: "selection",
@@ -30,8 +30,8 @@ const RegisterAthlete = () => {
             name: "sport",
             label: "Sport",
             placeholder: "Select your Sport",
-            value: athlete.sport,
-            onChange: (value: string) => setAthelete({ ...athlete, sport: value }),
+            value: campaign.sport,
+            onChange: (value: string) => setCampaign({ ...campaign, sport: value })
         }
     ]
   return (
@@ -40,9 +40,9 @@ const RegisterAthlete = () => {
         description='U need to get yourself registered as an ethlete to create a campaign'
         inputs={registerAthleteInput}
         onSubmit={onSubmit}>
-        <Button>Register as Athlete</Button>
+        <Button>Raise Fund</Button>
     </DialogModal>
   )
 }
 
-export default RegisterAthlete
+export default RaiseFund;

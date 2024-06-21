@@ -54,7 +54,7 @@ export function DialogModal({children,title,description,inputs,onSubmit}: Dialog
             })}
         </div>
         <DialogFooter>
-          <Button type="submit" variant={"outline"} onClick={onSubmit}>Save changes</Button>
+          <Button type="submit" variant={"outline"} onClick={onSubmit}>Register</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
