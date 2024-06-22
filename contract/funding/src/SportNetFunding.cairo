@@ -2,12 +2,12 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 trait ISportNetCrowdFunding<TContractState> {
-    fn athlethe_register(ref self: TContractState);
+    fn athlete_register(ref self: TContractState);
     fn create_campaign(ref self: TContractState, amount: u256);
     fn sponsor(ref self: TContractState, campaign_id: u128, amount: u256);
     fn claim(ref self: TContractState, campaign_id: u128);
-    fn is_athlethe_register(self: @TContractState, athlethe: ContractAddress) -> bool;
-    fn sponsor_share(self: @TContractState, athlethe: ContractAddress, sponsor: ContractAddress) -> u128;
+    fn is_athlete_register(self: @TContractState, athlete: ContractAddress) -> bool;
+    fn sponsor_share(self: @TContractState, athlete: ContractAddress, sponsor: ContractAddress) -> u128;
 }
 
 #[starknet::contract]
@@ -23,13 +23,13 @@ mod SportNetCrowdFunding {
 
         token_address: ContractAddress,
 
-        // athlethe and verified pair
+        // athlete and verified pair
         athletes: LegacyMap::<ContractAddress, bool>,
 
-        // athlethe and verified pair
+        // athlete and verified pair
         athlete_funded: LegacyMap::<ContractAddress, u256>,
 
-        // (athelthe,sponsor) tuple and athlethe pair
+        // (athlete,sponsor) tuple and athlete pair
         athlete_sponsors: LegacyMap::<(ContractAddress, ContractAddress), u256>,
 
         // campaign ID and amount pair
@@ -38,7 +38,7 @@ mod SportNetCrowdFunding {
         // campaign ID and status pair
         campaign_status: LegacyMap::<u128, bool>,
 
-        // campaign ID and athlethe pair
+        // campaign ID and athlete pair
         athlete_campaigns: LegacyMap::<u128, ContractAddress>,
 
         // campaign ID and collected amount pair
@@ -59,13 +59,13 @@ mod SportNetCrowdFunding {
     #[derive(Drop, starknet::Event)]
     struct Registered {
         #[key]
-        athlethe: ContractAddress,
+        athlete: ContractAddress,
     }
     #[derive(Drop, starknet::Event)]
     struct CreatedCampaign {
         #[key]
         campaign_id: u128,
-        athlethe: ContractAddress,
+        athlete: ContractAddress,
         amount: u256,
     }
     #[derive(Drop, starknet::Event)]
@@ -73,14 +73,14 @@ mod SportNetCrowdFunding {
         #[key]
         sponsor: ContractAddress,
         campaign_id: u128,
-        athlethe: ContractAddress,
+        athlete: ContractAddress,
         amount: u256,
     }
     #[derive(Drop, starknet::Event)]
     struct Claimed {
         #[key]
         campaign_id: u128,
-        athlethe: ContractAddress,
+        athlete: ContractAddress,
         amount: u256,
     }
 
@@ -93,29 +93,29 @@ mod SportNetCrowdFunding {
 
     #[abi(embed_v0)]
     impl SportNetCrowdFunding of super::ISportNetCrowdFunding<ContractState> {
-        fn athlethe_register(ref self: ContractState) {
-            let athlethe: ContractAddress = get_caller_address();
-            assert!(!self.athletes.read(athlethe), "Athlethe already registered!");
-            self.athletes.write(athlethe, true);
-            self.athlete_funded.write(athlethe, 0);
+        fn athlete_register(ref self: ContractState) {
+            let athlete: ContractAddress = get_caller_address();
+            assert!(!self.athletes.read(athlete), "Athlete already registered!");
+            self.athletes.write(athlete, true);
+            self.athlete_funded.write(athlete, 0);
 
-            self.emit(Registered {athlethe});
+            self.emit(Registered {athlete});
         }
 
         fn create_campaign(ref self: ContractState, amount: u256) {
-            let athlethe: ContractAddress = get_caller_address();
-            assert!(self.athletes.read(athlethe), "Athlethe is not registered!");
+            let athlete: ContractAddress = get_caller_address();
+            assert!(self.athletes.read(athlete), "Athlete is not registered!");
             assert!(amount > 0, "Campaign amount cannot be 0");
 
             let campaign_id = self.campaign_count.read();
             self.campaigns.write(campaign_id, amount);
-            self.athlete_campaigns.write(campaign_id, athlethe);
+            self.athlete_campaigns.write(campaign_id, athlete);
             self.campaign_amount.write(campaign_id, 0);
             self.campaign_status.write(campaign_id, true);
 
             self.campaign_count.write(campaign_id + 1_u128);
 
-            self.emit(CreatedCampaign {campaign_id, athlethe, amount});
+            self.emit(CreatedCampaign {campaign_id, athlete, amount});
         }
 
         fn sponsor(ref self: ContractState, campaign_id: u128, amount: u256) {
@@ -131,7 +131,7 @@ mod SportNetCrowdFunding {
                 "Deposited amount exceeds campaign limit");
 
             let sponsor = get_caller_address();
-            let athlethe = self.athlete_campaigns.read(campaign_id);
+            let athlete = self.athlete_campaigns.read(campaign_id);
 
             let contract_address = get_contract_address();
             let token_address: ContractAddress = self.token_address.read();
@@ -141,13 +141,13 @@ mod SportNetCrowdFunding {
             let result: bool = IERC20Dispatcher{contract_address: token_address}.transfer_from(sponsor, contract_address, amount);
             assert!(result, "Transfer Failed!");
 
-            let contributed = self.athlete_sponsors.read((athlethe, sponsor));
-            self.athlete_sponsors.write((athlethe, sponsor), contributed + amount);
-            self.athlete_funded.write(athlethe, self.athlete_funded.read(athlethe) + amount);
+            let contributed = self.athlete_sponsors.read((athlete, sponsor));
+            self.athlete_sponsors.write((athlete, sponsor), contributed + amount);
+            self.athlete_funded.write(athlete, self.athlete_funded.read(athlete) + amount);
             self.campaign_amount.write(campaign_id, updated_campaign_amount);
-            self.athlete_campaigns.write(campaign_id, athlethe);
+            self.athlete_campaigns.write(campaign_id, athlete);
 
-            self.emit(Sponspored {sponsor, campaign_id, athlethe, amount});
+            self.emit(Sponspored {sponsor, campaign_id, athlete, amount});
         }
 
         fn claim(ref self: ContractState, campaign_id: u128) {
@@ -159,16 +159,16 @@ mod SportNetCrowdFunding {
             assert!(amount <= collected_amount, "Campaign limit is not reached");
 
             let caller: ContractAddress = get_caller_address();
-            let athlethe = self.athlete_campaigns.read(campaign_id);
+            let athlete = self.athlete_campaigns.read(campaign_id);
 
-            assert!(caller == athlethe,
-                    "Only athelthe who raised the campaign can claim");
+            assert!(caller == athlete,
+                    "Only athlete who raised the campaign can claim");
 
             let contract_address = get_contract_address();
             let token_address: ContractAddress = self.token_address.read();
             
             let amount_after_fee: u256 = amount - (1/100);
-            let claimed_result: bool = IERC20Dispatcher{contract_address: token_address}.transfer_from(contract_address, athlethe, amount_after_fee);
+            let claimed_result: bool = IERC20Dispatcher{contract_address: token_address}.transfer_from(contract_address, athlete, amount_after_fee);
             assert!(claimed_result, "Claim Failed!");
 
             let platform_fee: u256 = amount - amount_after_fee;
@@ -178,25 +178,25 @@ mod SportNetCrowdFunding {
 
             self.campaign_status.write(campaign_id, false);
 
-            self.emit(Claimed {campaign_id, athlethe, amount});
+            self.emit(Claimed {campaign_id, athlete, amount});
         }
 
-        fn is_athlethe_register(self: @ContractState, athlethe: ContractAddress) -> bool {
-            self.athletes.read(athlethe)
+        fn is_athlete_register(self: @ContractState, athlete: ContractAddress) -> bool {
+            self.athletes.read(athlete)
         }
 
-        fn sponsor_share(self: @ContractState, athlethe: ContractAddress, sponsor: ContractAddress) -> u128 {
-            if !self.is_athlethe_register(athlethe) {
+        fn sponsor_share(self: @ContractState, athlete: ContractAddress, sponsor: ContractAddress) -> u128 {
+            if !self.is_athlete_register(athlete) {
                 return 0_u128;
             }
 
-            let sponsor_fund = self.athlete_sponsors.read((athlethe, sponsor));
+            let sponsor_fund = self.athlete_sponsors.read((athlete, sponsor));
 
             if sponsor_fund == 0 {
                 return 0_u128;
             }
 
-            let total_funded = self.athlete_funded.read(athlethe);
+            let total_funded = self.athlete_funded.read(athlete);
 
             (sponsor_fund/total_funded).try_into().unwrap()
         }
