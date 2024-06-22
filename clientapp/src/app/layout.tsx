@@ -3,8 +3,8 @@ import { Inter } from "next/font/google";
 import { StarknetProvider } from "@/components/starknet-provider";
 import "./globals.css";
 import { Navbar } from "@/components/Shared/navbar/Navbar";
-import { AthleteContextProvider } from "../../context/AthleteDbContext";
-import { UserContextProvider } from "../../context/UserDbContext";
+import { AthleteContextProvider } from "../../context/AthleteContext";
+import { UserContextProvider } from "../../context/UserContext";
 
 const inter = Inter({ subsets: ["latin"] });
 

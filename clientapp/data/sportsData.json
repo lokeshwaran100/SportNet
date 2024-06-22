@@ -1,0 +1,10 @@
+{
+    "sports":{
+        "Batminton":{
+            "equipment": ["racket","net","shoes","equipment","academy fees","gym membership"]
+        },
+        "Football":{
+            "equipment": ["club fees","gym membership","jersey","studs"]
+        }
+    }
+}

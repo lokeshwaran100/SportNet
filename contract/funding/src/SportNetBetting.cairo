@@ -168,7 +168,7 @@ pub mod SportNetBetting {
             let tokens = (token1, token2);
 
             // Check if the creator is a registered athlete
-            assert!(ISportNetCrowdFundingDispatcher{contract_address: self.crowfundingContract.read()}.is_athlethe_register(athlete), "Athlete is not registered yet!");
+            assert!(ISportNetCrowdFundingDispatcher{contract_address: self.crowfundingContract.read()}.is_athlete_register(athlete), "Athlete is not registered yet!");
 
             let market = Market {
                 name,

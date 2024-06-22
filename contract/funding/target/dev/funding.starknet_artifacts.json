@@ -1,0 +1,1 @@
+{"version":1,"contracts":[{"id":"igoakqpfibrdm","package_name":"funding","contract_name":"SportNetCrowdFunding","module_path":"funding::SportNetFunding::SportNetCrowdFunding","artifacts":{"sierra":"funding_SportNetCrowdFunding.contract_class.json","casm":null}}]}

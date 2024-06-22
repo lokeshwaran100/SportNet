@@ -2,4 +2,5 @@ clientapp/node_modules
 clientapp/.next
 clientapp/package-lock.json
 clientapp/.env
-contract/funding/target
+contract/funding/target/CACHEDIR.TAG
+archive
