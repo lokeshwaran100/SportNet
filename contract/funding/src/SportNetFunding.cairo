@@ -14,7 +14,6 @@ trait ISportNetCrowdFunding<TContractState> {
 mod SportNetCrowdFunding {
     use starknet::{get_caller_address, get_contract_address, ContractAddress, SyscallResultTrait};
     use starknet::syscalls::{call_contract_syscall};
-    use core::serde::Serde;
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     
     #[storage]
@@ -35,6 +34,9 @@ mod SportNetCrowdFunding {
 
         // campaign ID and amount pair
         campaigns: LegacyMap::<u128, u256>,
+
+        // campaign ID and status pair
+        campaign_status: LegacyMap::<u128, bool>,
 
         // campaign ID and athlethe pair
         athlete_campaigns: LegacyMap::<u128, ContractAddress>,
@@ -109,6 +111,7 @@ mod SportNetCrowdFunding {
             self.campaigns.write(campaign_id, amount);
             self.athlete_campaigns.write(campaign_id, athlethe);
             self.campaign_amount.write(campaign_id, 0);
+            self.campaign_status.write(campaign_id, true);
 
             self.campaign_count.write(campaign_id + 1_u128);
 
@@ -119,6 +122,9 @@ mod SportNetCrowdFunding {
             let campaign_amount = self.campaigns.read(campaign_id);
             assert!(campaign_amount > 0, "Campaign does not exists");
 
+            let campaign_status = self.campaign_status.read(campaign_id);
+            assert!(campaign_status, "Campaign is closed");
+
             let collected_amount = self.campaign_amount.read(campaign_id);
             let updated_campaign_amount = collected_amount + amount;
             assert!(campaign_amount >= updated_campaign_amount,
@@ -128,19 +134,11 @@ mod SportNetCrowdFunding {
             let athlethe = self.athlete_campaigns.read(campaign_id);
 
             let contract_address = get_contract_address();
-            // let mut call_data: Array<felt252> = ArrayTrait::new();
-            // Serde::serialize(@sponsor, ref call_data);
-            // Serde::serialize(@contract_address, ref call_data);
-            // Serde::serialize(@amount, ref call_data);
-
-            // let mut res = call_contract_syscall(
-            //     self.token_address.read(), selector!("transferFrom"), call_data.span()
-            // ).unwrap_syscall();
-            // let result = Serde::<bool>::deserialize(ref res).unwrap();
             let token_address: ContractAddress = self.token_address.read();
-            IERC20Dispatcher{contract_address: token_address}.approve(contract_address, amount);
-            let result: bool = IERC20Dispatcher{contract_address: token_address}.transfer_from(sponsor, contract_address, amount);
+            let approve: bool = IERC20Dispatcher{contract_address: token_address}.approve(contract_address, amount);
+            assert!(approve, "Approve Failed!");
 
+            let result: bool = IERC20Dispatcher{contract_address: token_address}.transfer_from(sponsor, contract_address, amount);
             assert!(result, "Transfer Failed!");
 
             let contributed = self.athlete_sponsors.read((athlethe, sponsor));
@@ -153,6 +151,9 @@ mod SportNetCrowdFunding {
         }
 
         fn claim(ref self: ContractState, campaign_id: u128) {
+            let campaign_status = self.campaign_status.read(campaign_id);
+            assert!(campaign_status, "Campaign is closed");
+
             let amount = self.campaigns.read(campaign_id);
             let collected_amount = self.campaign_amount.read(campaign_id);
             assert!(amount <= collected_amount, "Campaign limit is not reached");
@@ -164,20 +165,18 @@ mod SportNetCrowdFunding {
                     "Only athelthe who raised the campaign can claim");
 
             let contract_address = get_contract_address();
-            // let mut call_data: Array<felt252> = ArrayTrait::new();
-            // Serde::serialize(@contract_address, ref call_data);
-            // Serde::serialize(@athlethe, ref call_data);
-            // Serde::serialize(@amount, ref call_data);
-
-            // let mut res = call_contract_syscall(
-            //     self.token_address.read(), selector!("transferFrom"), call_data.span()
-            // ).unwrap_syscall();
-            // let result = Serde::<bool>::deserialize(ref res).unwrap();
             let token_address: ContractAddress = self.token_address.read();
-            IERC20Dispatcher{contract_address: token_address}.approve(athlethe, amount);
-            let result: bool = IERC20Dispatcher{contract_address: token_address}.transfer_from(contract_address, athlethe, amount);
+            
+            let amount_after_fee: u256 = amount - (1/100);
+            let claimed_result: bool = IERC20Dispatcher{contract_address: token_address}.transfer_from(contract_address, athlethe, amount_after_fee);
+            assert!(claimed_result, "Claim Failed!");
 
-            assert!(result, "Claim Failed!");
+            let platform_fee: u256 = amount - amount_after_fee;
+            let owner = self.owner.read();
+            let fee_result: bool = IERC20Dispatcher{contract_address: token_address}.transfer_from(contract_address, owner, platform_fee);
+            assert!(fee_result, "Fee Distribution Failed!");
+
+            self.campaign_status.write(campaign_id, false);
 
             self.emit(Claimed {campaign_id, athlethe, amount});
         }
