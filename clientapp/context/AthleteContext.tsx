@@ -41,7 +41,7 @@ export const AthleteContextProvider: React.FC<AthleteContextProviderProps> = ({ 
 
   const { contract } = useContract({
     abi: SportNetFundingAbi,
-    address: '0x030d0b10f64347c02dfb01fc509be7cb6dd83eafda366c851c6b56475fe170a8',
+    address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
   });
 
   useEffect(()=>{
