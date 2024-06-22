@@ -16,7 +16,7 @@ export async function createAthlete(newAthlete: any) {
     });
 }
 
-export async function createCampaign(newCampaign: any) {
+export async function storeCampaignDetails(newCampaign: any) {
     console.log("Storing in DB",newCampaign);
     connectToDB();
     const campaign=new Campaign(newCampaign);

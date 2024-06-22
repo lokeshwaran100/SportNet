@@ -9,7 +9,7 @@ const CampaignSchema=new mongoose.Schema({
         type: String,
         required: true
     },
-    currentDonation:{
+    amountDonated:{
         type: Number,
         required: true,
         default: 0

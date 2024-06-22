@@ -1,9 +1,11 @@
 
 "use client"
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import axios from 'axios';
 
 // context type
 interface UserContextType {
+  allCampaigns: any[];
 }
 
 // Creating the context with an initial value
@@ -19,16 +21,21 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({ childr
   const [allCampaigns,setAllCampaigns]=useState([]);
   const [allBets,setAllBets]=useState([]);
   
+  const url=process.env.NEXT_PUBLIC_URL;
+
   useEffect(()=>{
     fetchCampaigns();
-    fetchBets();
+    // fetchBets();
   },[]);
 
   const fetchBets=()=>{
 
   }
-  const fetchCampaigns=()=>{
-
+  const fetchCampaigns=async()=>{
+    const res=await axios.get(`${url}api/campaign`);
+    const data=res.data.message;
+    console.log("the fetched campaigns are", data);
+    setAllCampaigns(data);
   }
 
   const sponsorAthlete=(sponsorData: any)=>{
@@ -39,7 +46,7 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({ childr
   }
   
   // add all the function here
-  return <UserContext.Provider value={{}}>{children}</UserContext.Provider>;
+  return <UserContext.Provider value={{allCampaigns}}>{children}</UserContext.Provider>;
 };
 
 // custom hook for accessing the user context 
