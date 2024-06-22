@@ -29,6 +29,11 @@ const CampaignSchema=new mongoose.Schema({
     id: {
         type: Number,
         required: true
+    },
+    isClaimed: {
+        type: Boolean,
+        required: true,
+        default: false
     }
 })
 

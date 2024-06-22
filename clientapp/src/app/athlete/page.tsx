@@ -1,5 +1,5 @@
 "use client"
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from '@/components/ui/card';
@@ -13,12 +13,13 @@ import {
 } from "@/components/ui/table"
 import axios from 'axios';
 import { useAthleteContext } from '../../../context/AthleteContext';
+import { useContractWrite } from '@starknet-react/core';
 
 
 const campaignsData = [
   // Sample data
-  { id: 0, name: 'Flight Ticket', funds: 1000, sponsors: 10, claimable: true },
-  { id: 1, name: 'Lifting Shoes', funds: 1500, sponsors: 12, claimable: false },
+  { id: 0, name: 'Flight Ticket', funds: 1000, sponsors: 10, isClaimed: true },
+  { id: 1, name: 'Lifting Shoes', funds: 1500, sponsors: 12, isClaimed: false },
 ];
 
 const page = () => {
@@ -27,6 +28,7 @@ const page = () => {
   const [reputation, setReputation] = useState(0);
   const [bettingRevenue, setBettingRevenue] = useState(0);
   const {myCampaigns} = useAthleteContext();
+  const [campaignId, setCampaignId]=useState(0);
 
   useEffect(() => {
 
@@ -40,9 +42,32 @@ const page = () => {
     setBettingRevenue(2000); // Sample betting revenue
   }, []);
 
-  const handleClaim = (id) => {
+  const {contract}=useAthleteContext();
+
+  const SCALE_FACTOR = BigInt(10 ** 18);
+  function toBigIntAmount(amount: number) {
+      return BigInt(Math.round(amount * Number(SCALE_FACTOR)));
+  }
+
+  const calls = useMemo(() => {
+  //   console.log("the args are", ...args);
+    if (!contract) return [];
+    return contract.populateTransaction["claim"]!(campaignId);
+  }, [contract, campaignId]);
+  
+  const {
+    writeAsync,
+    data: contractData,
+    isPending,
+  } = useContractWrite({
+    calls,
+  });
+
+  const handleClaim = async (id: any) => {
     console.log(`Claim funds for campaign ${id}`);
-    // Implement claim logic here
+    setCampaignId(id);
+    const res = await writeAsync();
+    console.log(res)
   };
 
   return (
@@ -92,10 +117,10 @@ const page = () => {
                   <TableCell>${campaign.amount}</TableCell>
                   <TableCell>{campaign.address}</TableCell>
                   <TableCell>
-                    {campaign.claimable ? (
-                      <Button onClick={() => handleClaim(campaign.id)}>Claim</Button>
-                    ) : (
+                    {campaign.isClaimed ? (
                       <Button disabled>Claimed</Button>
+                    ) : (
+                      <Button variant={"black"} onClick={() => handleClaim(campaign.id)}>Claim</Button>
                     )}
                   </TableCell>
                 </TableRow>
