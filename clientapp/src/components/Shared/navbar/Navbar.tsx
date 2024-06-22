@@ -73,7 +73,7 @@ export const Navbar = () => {
         <div className="flex gap-5 my-auto h-full">
           <WalletConnectBar/>
           {address&&isAthlete&&<RaiseFund address={address}/>}
-          {address&&!isAthlete&&<RegisterAthlete/>}
+          {address&&!isAthlete&&<RegisterAthlete address={address}/>}
         </div>
       </NavContainer>
     );

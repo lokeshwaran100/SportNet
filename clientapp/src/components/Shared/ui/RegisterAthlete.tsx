@@ -2,14 +2,43 @@ import React, { useState } from 'react'
 import { DialogModal } from '@/components/custom/DialogModal';
 import { Button } from '@/components/ui/button';
 import { useAthleteContext } from '../../../../context/AthleteContext';
+import { useMemo } from 'react';
+import { useContractWrite } from '@starknet-react/core';
+import { createAthlete } from '@/lib/Server/AthleteActions';
 
-const RegisterAthlete = () => {
+const RegisterAthlete = ({address}:{address:string}) => {
     const [athlete, setAthelete]=useState({
         name:'',
         sport: '',
     });
 
-    const { register }=useAthleteContext();
+    console.log("entered register athlete");
+    const { contract }=useAthleteContext();
+    const calls = useMemo(() => {
+        if (!contract) return [];
+        return contract.populateTransaction["athlete_register"]!();
+      }, [contract]);
+      
+      const {
+        writeAsync,
+        data,
+        isPending,
+      } = useContractWrite({
+        calls,
+      });
+    
+  const register=async(registeredData: any)=>{
+    try{
+      const res=await writeAsync();
+      console.log(res);
+      console.log("the registered data is", registeredData);
+      const newRegisteredData = {...registeredData, address: address};
+      createAthlete(newRegisteredData);
+    }
+    catch(e){
+      console.log("error occured", e);
+    }
+  }
 
     const onSubmit=()=>{
         register(athlete);

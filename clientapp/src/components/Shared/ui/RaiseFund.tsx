@@ -3,6 +3,7 @@ import { DialogModal } from '@/components/custom/DialogModal';
 import { Button } from '@/components/ui/button';
 import { useAthleteContext } from '../../../../context/AthleteContext';
 import data from '../../../../data/sportsData.json';
+import { useContractWrite } from '@starknet-react/core';
 
 type RaiseFundProps={
     address: string;
@@ -19,7 +20,53 @@ const RaiseFund = ({address}:RaiseFundProps) => {
         equipment: '',
     });
 
-    const { createCampaign }=useAthleteContext();
+    const {contract}=useAthleteContext();
+
+    const SCALE_FACTOR = BigInt(10 ** 18);
+    function toBigIntAmount(amount: number) {
+        return BigInt(Math.round(amount * Number(SCALE_FACTOR)));
+    }
+
+    const calls = useMemo(() => {
+    //   console.log("the args are", ...args);
+      if (!contract) return [];
+      return contract.populateTransaction["create_campaign"]!(toBigIntAmount(campaign.amount));
+    }, [contract, campaign.amount]);
+    
+    const {
+      writeAsync,
+      data: contractData,
+      isPending,
+    } = useContractWrite({
+      calls,
+    });
+
+    const createCampaign = async (campaignData: any) =>{
+        try{
+        //   setArgs([toBigIntAmount(campaignData.amount)]);
+        //   setCallFunction("create_campaign");
+          const res=await writeAsync();
+        //   const eventH = num.toHex(hash.starknetKeccak('create_campaign'));
+        //   console.log("event name hash =", eventH);
+        //   const myKeys = [[eventH]];
+        //   const result = await myProvider.getEvents({
+        //     address: '0x030d0b10f64347c02dfb01fc509be7cb6dd83eafda366c851c6b56475fe170a8',
+        //     from_block: { block_number: 75448 },
+        //     to_block:  { block_number: 75448 },
+        //     keys: myKeys,
+        //     chunk_size: 50,
+        //     continuation_token: undefined,
+        //   });
+        //   console.log("rawEvents=", result.events);
+          const newCampaignData = {...campaignData, address: address, campaignId: 1};
+          console.log("the campaign data is", campaignData); 
+        }
+        catch(e){ 
+          console.log("error occured", e);
+        }
+      }
+
+    console.log("entered the Raise Fund");
 
     const onSubmit=()=>{
         createCampaign(campaign);
