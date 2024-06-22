@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait ISportNetCrowdFunding<TContractState> {
+pub trait ISportNetCrowdFunding<TContractState> {
     fn athlethe_register(ref self: TContractState);
     fn create_campaign(ref self: TContractState, amount: u256);
     fn sponsor(ref self: TContractState, campaign_id: u128, amount: u256);

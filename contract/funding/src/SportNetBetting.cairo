@@ -1,5 +1,4 @@
 use starknet::ContractAddress;
-use funding::SportNetFunding;
 
 #[starknet::interface]
 pub trait ISportNetBetting<TContractState> {
@@ -24,7 +23,9 @@ pub trait ISportNetBetting<TContractState> {
 
 #[starknet::contract]
 pub mod SportNetBetting {
+    use funding::SportNetFunding::ISportNetCrowdFundingDispatcherTrait;
     use funding::SportNetBetting::ISportNetBetting;
+    use funding::SportNetFunding::ISportNetCrowdFundingDispatcher;
     use core::clone::Clone;
     use core::traits::AddEq;
     use core::option::OptionTrait;
@@ -32,7 +33,8 @@ pub mod SportNetBetting {
     use core::traits::Into;
     use core::num::traits::zero::Zero;
     use core::starknet::event::EventEmitter;
-    use starknet::{ContractAddress, get_caller_address, get_contract_address, storage_access::StorageBaseAddress};
+    use starknet::{ContractAddress, get_caller_address, get_contract_address, SyscallResultTrait, storage_access::StorageBaseAddress};
+    use starknet::syscalls::{call_contract_syscall};
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
 
     #[storage]
@@ -45,9 +47,6 @@ pub mod SportNetBetting {
 
         // funding contract address
         crowfundingContract: ContractAddress,
-
-        // athlethe and verified pair
-        athletes: LegacyMap::<ContractAddress, bool>,
 
         // market count
         market_count: u128,
@@ -70,20 +69,8 @@ pub mod SportNetBetting {
         // beter count
         beter_count: u128,
 
-        // user ID and athlethe pair
-        beter_athlete: LegacyMap::<u128, ContractAddress>,
-
         // user ID and user address pair
         beters: LegacyMap::<u128, ContractAddress>,
-
-        // user ID and bet amount pair
-        bet_amount: LegacyMap::<ContractAddress, u256>,
-
-        // market ID and athlethe pair
-        athlete_markets: LegacyMap::<u128, ContractAddress>,
-
-        // market ID and collected amount pair
-        market_amount: LegacyMap::<u128, u256>,
     }
 
     #[derive(Drop, Serde, Clone, starknet::Store, PartialEq, Eq)]
@@ -172,6 +159,8 @@ pub mod SportNetBetting {
             options: (felt252, felt252),
             minBet: u256,
         ) {
+            let user: ContractAddress = get_caller_address();
+            assert!(user == self.owner.read(), "Only owner can create a market");
             let (scenario1, scenario2) = options;
             let mut token1 = Scenarios { name: scenario1, opted: 0_u128, amount: 0_u256};
             let mut token2 = Scenarios { name: scenario2, opted: 0_u128, amount: 0_u256};
@@ -179,10 +168,7 @@ pub mod SportNetBetting {
             let tokens = (token1, token2);
 
             // Check if the creator is a registered athlete
-            let athlete: ContractAddress = get_caller_address();
-            if !self.athletes.read(athlete) {
-                panic!("Markets.cairo: Athlete needs to be registered!");
-            }
+            assert!(ISportNetCrowdFundingDispatcher{contract_address: self.crowfundingContract.read()}.is_athlethe_register(athlete), "Athlete is not registered yet!");
 
             let market = Market {
                 name,
@@ -200,7 +186,6 @@ pub mod SportNetBetting {
             let market_id = self.market_count.read() + 1;
 
             self.market_count.write(market_id);
-            self.athlete_markets.write(market_id, athlete);
             self.markets.write(market_id, market);
             let createdMarket = self.markets.read(market_id);
             self.emit(CreatedMarket {market_id, market: createdMarket, athlete, amount: 0_u256});
@@ -216,7 +201,6 @@ pub mod SportNetBetting {
             let beterId = self.beter_count.read() + 1;
             self.beter_count.write(beterId);
             self.beters.write(beterId, beter);
-            self.beter_athlete.write(beterId, market.clone().athlete);
             let (mut opt1, mut opt2) = market.clone().outcomes;
 
             let token_address: ContractAddress = self.token_address.read();
@@ -248,8 +232,6 @@ pub mod SportNetBetting {
             }
             market.moneyInPool = market.clone().moneyInPool + amount;
             self.markets.write(marketId, market.clone());
-            self.market_amount.write(marketId, self.market_amount.read(marketId) + amount);
-            self.bet_amount.write(beter, self.bet_amount.read(beter) + amount);
             self.emit(BetPlaced {user_id: beterId, user: beter, market_id: marketId, athlete: market.athlete, amount});
         }
 
@@ -363,3 +345,38 @@ pub mod SportNetBetting {
         }
     }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use super::{ SportNetBetting, ISportNetBettingDispatcher, ISportNetBettingDispatcherTrait };
+//     use starknet::{ ContractAddress, syscalls::deploy_syscall };
+
+//     fn deploy_contract() -> ISportNetBettingDispatcher {
+//         let mut calldata = ArrayTrait::new();
+//         let (address0, _) = deploy_syscall(
+//             SportNetBetting::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
+//         )
+//             .unwrap();
+//         let contract0 = ISportNetBettingDispatcher { contract_address: address0 };
+//         contract0
+//     }
+
+//     #[test]
+//     #[available_gas(1000000)]
+//     fn test_get() {
+//         let contract = deploy_contract();
+//         let data = contract.get();
+
+//         assert_eq!(0, data);
+//     }
+
+//     #[test]
+//     #[available_gas(1000000)]
+//     fn test_set() {
+//         let contract = deploy_contract();
+//         contract.set(10);
+//         let data = contract.get();
+
+//         assert_eq!(10, data);
+//     }
+// }
