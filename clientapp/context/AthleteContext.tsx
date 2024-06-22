@@ -50,12 +50,14 @@ export const AthleteContextProvider: React.FC<AthleteContextProviderProps> = ({ 
   },[address]);
 
   useEffect(()=>{
-    fetchMyCampaigns();
+    fetchMyCampaigns(address);
     console.log("the featched campaigns are", myCampaigns);
   },[address]);
 
-  const fetchMyCampaigns = () => {
-
+  const fetchMyCampaigns = async (address: any) => {
+    const res = await axios.get(`${url}api/campaign?athlete=` + address);
+    console.log("Campaign Details: ", res.data.message);
+    setMyCampaigns(res.data.message);
   }
 
   const fetchAthletes = async () => {

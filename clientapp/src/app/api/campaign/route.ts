@@ -2,13 +2,27 @@ import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/connectToDb";
 import Campaign from "@/lib/models/Campaign";
 import { NextApiRequest, NextApiResponse } from 'next';
+import { parse } from "url";
 
 export const revalidate: number = 0;
 
 export async function GET(req: NextApiRequest, res: NextApiResponse) {
     try {
+        let athlete_ = null;
+        if (req.url) {
+            const parsedUrl = parse(req.url, true);
+            const { athlete } = parsedUrl.query;
+            athlete_ = athlete
+        }
+        console.log(athlete_)
         await connectToDB();
-    const data= await Campaign.find();
+        let data;
+        if (athlete_) {
+            data = await Campaign.find({address: athlete_});
+        } else {
+            data = await Campaign.find();
+        }
+    
         return NextResponse.json({
             message: data
         }, {

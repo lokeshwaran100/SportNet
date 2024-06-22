@@ -59,7 +59,10 @@ const RaiseFund = ({address}:RaiseFundProps) => {
         //     continuation_token: undefined,
         //   });
         //   console.log("rawEvents=", result.events);
-          const newCampaignData = {...campaignData, address: address, id: 1};
+          const newCampaignData = {...campaignData, address: address, id: 0};
+          console.log("Saving campaign data:", newCampaignData);
+          await storeCampaignDetails(newCampaignData);
+          console.log("Saved campaign data:", newCampaignData);
           console.log("the campaign data is", campaignData); 
           storeCampaignDetails(newCampaignData);
         }
