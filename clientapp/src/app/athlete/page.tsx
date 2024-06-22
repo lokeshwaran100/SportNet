@@ -11,24 +11,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import axios from 'axios';
+import { useAthleteContext } from '../../../context/AthleteContext';
 
 
 const campaignsData = [
   // Sample data
-  { id: 1, name: 'Flight Ticket', funds: 1000, sponsors: 10, claimable: true },
-  { id: 2, name: 'Lifting Shoes', funds: 1500, sponsors: 12, claimable: false },
+  { id: 0, name: 'Flight Ticket', funds: 1000, sponsors: 10, claimable: true },
+  { id: 1, name: 'Lifting Shoes', funds: 1500, sponsors: 12, claimable: false },
 ];
 
 const page = () => {
-  const [campaigns, setCampaigns] = useState([]);
   const [sponsorCount, setSponsorCount] = useState(0);
   const [totalFunds, setTotalFunds] = useState(0);
   const [reputation, setReputation] = useState(0);
   const [bettingRevenue, setBettingRevenue] = useState(0);
+  const {myCampaigns} = useAthleteContext();
 
   useEffect(() => {
-    // Fetch campaigns from API or state
-    setCampaigns(campaignsData);
 
     // Calculate additional metrics
     const totalSponsors = campaignsData.reduce((acc, campaign) => acc + campaign.sponsors, 0);
@@ -86,11 +86,11 @@ const page = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {campaigns.map(campaign => (
+              {myCampaigns && myCampaigns.map(campaign => (
                 <TableRow key={campaign.id}>
-                  <TableCell>{campaign.name}</TableCell>
-                  <TableCell>${campaign.funds}</TableCell>
-                  <TableCell>{campaign.sponsors}</TableCell>
+                  <TableCell>{campaign.title}</TableCell>
+                  <TableCell>${campaign.amount}</TableCell>
+                  <TableCell>{campaign.address}</TableCell>
                   <TableCell>
                     {campaign.claimable ? (
                       <Button onClick={() => handleClaim(campaign.id)}>Claim</Button>
