@@ -15,10 +15,10 @@ pub trait ISportNetBetting<TContractState> {
     fn claimWinnings(ref self: TContractState, marketId: u128, receiver: ContractAddress);
     fn getWinnerShares(ref self: TContractState, marketId: u128) -> (u256, u256);
     fn checkMarketStatus(ref self: TContractState, marketId: u128, user: ContractAddress);
-    fn getMarketCount(ref self: TContractState) -> u128;
-    fn getMarket(ref self: TContractState, marketId: u128) -> SportNetBetting::Market;
-    fn getContractOwner(ref self: TContractState) -> ContractAddress;
-    fn getAllMarkets(ref self: TContractState) -> Array<SportNetBetting::Market>;
+    fn getMarketCount(self: @TContractState) -> u128;
+    fn getMarket(self: @TContractState, marketId: u128) -> SportNetBetting::Market;
+    fn getContractOwner(self: @TContractState) -> ContractAddress;
+    fn getAllMarkets(self: @TContractState) -> Array<SportNetBetting::Market>;
 }
 
 #[starknet::contract]
@@ -317,16 +317,16 @@ pub mod SportNetBetting {
             self.winner_exists.write((marketId, market_athlete), true);
         }
 
-        fn getMarketCount(ref self: ContractState) -> u128 {
+        fn getMarketCount(self: @ContractState) -> u128 {
             return self.market_count.read();
         }
 
-        fn getMarket(ref self: ContractState, marketId: u128) -> Market {
+        fn getMarket(self: @ContractState, marketId: u128) -> Market {
             assert!(marketId <= self.market_count.read(), "Market does not exist");
             return self.markets.read(marketId);
         }
 
-        fn getAllMarkets(ref self: ContractState) -> Array<Market> {
+        fn getAllMarkets(self: @ContractState) -> Array<Market> {
             let mut markets: Array<Market> = ArrayTrait::new();
             let mut index: u128 = 0;
             loop {
@@ -340,7 +340,7 @@ pub mod SportNetBetting {
             return markets;
         }
 
-        fn getContractOwner(ref self: ContractState) -> ContractAddress {
+        fn getContractOwner(self: @ContractState) -> ContractAddress {
             return self.owner.read();
         }
     }
