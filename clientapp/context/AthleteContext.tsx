@@ -6,11 +6,12 @@ import { useContractWrite } from "@starknet-react/core";
 import { abi as SportNetFundingAbi } from "../../contract/funding/target/dev/funding_SportNetCrowdFunding.contract_class.json"
 import { useMemo } from "react";
 import axios from 'axios';
+import { Athlete } from '@/lib/types/Entity';
 
 // Define the context type
 interface AthleteContextType {
   // Define any properties or methods that the context should have
-  athletes: any[];
+  athletes: Athlete[];
   myCampaigns: any[];
   register: (registeredData: any) => void;
   createCampaign: (campaignData: any) => void;
@@ -26,11 +27,11 @@ interface AthleteContextProviderProps {
 
 // Provider for the user context
 export const AthleteContextProvider: React.FC<AthleteContextProviderProps> = ({ children }) => {
-  const [athletes, setAthletes] = React.useState([]);
+  const [athletes, setAthletes] = React.useState<Athlete[]>([]);
   const [myCampaigns,setMyCampaigns]=React.useState([]);
   const [isAthlete, setIsAthlete] = useState(false);
   const [callFunction, setCallFunction] =useState("athlethe_register");
-  const [args, setArgs] = useState([]);
+  const [args, setArgs] = useState<any>([]);
   const { address } = useAccount();
 
   const url=process.env.NEXT_PUBLIC_URL;
@@ -51,6 +52,7 @@ export const AthleteContextProvider: React.FC<AthleteContextProviderProps> = ({ 
   },[address]);
 
   const calls = useMemo(() => {
+    console.log("the args are", ...args);
     if (!address || !contract) return [];
     return contract.populateTransaction[callFunction]!(...args);
   }, [contract, address, callFunction]);
@@ -87,7 +89,10 @@ export const AthleteContextProvider: React.FC<AthleteContextProviderProps> = ({ 
     }
   }
 
-  const createCampaign = (campaignData: any) =>{
+  const createCampaign = async (campaignData: any) =>{
+    setArgs([campaignData.amount]);
+    setCallFunction("create_campaign");
+    const res=await writeAsync();
     console.log("the campaign data is", campaignData);
   }
 

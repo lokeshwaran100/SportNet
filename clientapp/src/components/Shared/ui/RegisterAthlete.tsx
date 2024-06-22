@@ -39,7 +39,9 @@ const RegisterAthlete = () => {
         title={"Register Athlete"}
         description='U need to get yourself registered as an ethlete to create a campaign'
         inputs={registerAthleteInput}
-        onSubmit={onSubmit}>
+        onSubmit={onSubmit}
+        action="Register"
+    >
         <Button>Register as Athlete</Button>
     </DialogModal>
   )

@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SelectDropDown } from "./SelectDropDown"
+import { Textarea } from "../ui/textarea"
 
 type DialogModalProps={
     children: React.ReactNode;
@@ -18,9 +19,10 @@ type DialogModalProps={
     description: string;
     inputs: any[];
     onSubmit: ()=>void;
+    action: string;
 }
 
-export function DialogModal({children,title,description,inputs,onSubmit}: DialogModalProps) {
+export function DialogModal({children,title,description,inputs,onSubmit,action}: DialogModalProps) {
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -44,17 +46,21 @@ export function DialogModal({children,title,description,inputs,onSubmit}: Dialog
                     placeholder={input.placeholder}
                     items={input.items}
                     onChange={(value:string)=>input.onChange(value)}/>
-                </>):(<><Label htmlFor={input.name} className="text-right">
+                </>):(<>{input.type==="textarea"?<><Label htmlFor={input.name} className="text-right">
                       {input.label}
                     </Label>
-                    <Input id={input.name} value={input.value} onChange={(e)=>input.onChange(e.target.value)} placeholder={input.placeholder} className="col-span-3" />
-                        </>
+                    <Textarea id={input.name} value={input.value} onChange={(e)=>input.onChange(e.target.value)} placeholder={input.placeholder} className="col-span-3" /></>:<><Label htmlFor={input.name} className="text-right">
+                      {input.label}
+                    </Label>
+                    <Input type={input.type} id={input.name} value={input.value} onChange={(e)=>input.onChange(e.target.value)} placeholder={input.placeholder} className="col-span-3" />
+                        </>}
+                      </>
                   )}
                 </div>
             })}
         </div>
         <DialogFooter>
-          <Button type="submit" variant={"outline"} onClick={onSubmit}>Register</Button>
+          <Button type="submit" variant={"outline"} onClick={onSubmit}>{action}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
