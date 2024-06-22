@@ -28,14 +28,14 @@
   .sportnet {
     font-size: 6rem; 
     font-family: 'Droid Sans', sans-serif; 
-    color: #8c00ff;
+    color: #eeff00;
     text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff, 0 0 50px #ff00ff, 0 0 60px #ff00ff, 0 0 70px #ff00ff;
     animation: glow 1s ease-in-out infinite alternate;
   }
   .subtext {
     font-size: 2rem; 
     font-family: 'Droid Sans', sans-serif; 
-    color: #b3ff00;
+    color: #00ff1a;
     text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff, 0 0 50px #ff00ff, 0 0 60px #ff00ff, 0 0 70px #ff00ff;
     animation: glow 1s ease-in-out infinite alternate;
   }
