@@ -1,6 +1,7 @@
 'use client'
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAccount } from "@starknet-react/core";
 import WalletConnectBar from "@/components/WalletConnectBar";
@@ -60,13 +61,14 @@ export const Navbar = () => {
             <h1 className="font-bold text-2xl cursor-pointer">SportNet</h1>
           </Link>
         </div>
-        <ul className="flex gap-20 text-lg">
+        <ul className="flex gap-10 text-lg">
           <Link href="/" passHref>
             <li
-              className={`link-animate hover:text-gray-300 ${selected === "home" && "text-gray-300"
+              className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "home" && "text-gray-300"
                 }`}
               onClick={() => setSelected("home")}
             >
+              <Image src="/images/ath.svg" alt="Home" width={20} height={20} />
               Home
             </li>
           </Link>
@@ -75,10 +77,11 @@ export const Navbar = () => {
               {!userType && (
                 <Link href="/sponsor" passHref>
                   <li
-                    className={`link-animate hover:text-gray-300 ${selected === "sponsor" && "text-gray-300"
+                    className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "sponsor" && "text-gray-300"
                       }`}
                     onClick={() => setSelected("sponsor")}
                   >
+                    <Image src="/images/spons.svg" alt="Sponsor" width={20} height={20} />
                     Sponsor
                   </li>
                 </Link>
@@ -90,7 +93,8 @@ export const Navbar = () => {
               content="Please connect your wallet to sponsor an athlete"
               buttonText="Okay"
             >
-              <li className="link-animate hover:text-gray-300 cursor-pointer">
+              <li className="flex items-center gap-2 link-animate hover:text-gray-300 cursor-pointer">
+                <Image src="/images/wallet.svg" alt="Sponsor" width={20} height={20} />
                 Sponsor
               </li>
             </AlertDialogModal>
@@ -100,10 +104,11 @@ export const Navbar = () => {
               {!userType && (
                 <Link href="/bet" passHref>
                   <li
-                    className={`link-animate hover:text-gray-300 ${selected === "sponsor" && "text-gray-300"
+                    className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "bet" && "text-gray-300"
                       }`}
-                    onClick={() => setSelected("sponsor")}
+                    onClick={() => setSelected("bet")}
                   >
+                    <Image src="/images/bet-icon.svg" alt="Bet" width={20} height={20} />
                     Bet
                   </li>
                 </Link>
@@ -115,7 +120,8 @@ export const Navbar = () => {
               content="Please connect your wallet to bet on athlete"
               buttonText="Okay"
             >
-              <li className="link-animate hover:text-gray-300 cursor-pointer">
+              <li className="flex items-center gap-2 link-animate hover:text-gray-300 cursor-pointer">
+                <Image src="/images/bet.svg" alt="Bet" width={20} height={20} />
                 Bet
               </li>
             </AlertDialogModal>
@@ -123,20 +129,22 @@ export const Navbar = () => {
           {address && userType == UserType.ATHLETE && (
             <Link href="/athlete" passHref>
               <li
-                className={`link-animate hover:text-gray-300 ${selected === "home" && "text-gray-300"
+                className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "athlete" && "text-gray-300"
                   }`}
                 onClick={() => setSelected("athlete")}
               >
+                <Image src="/images/ath.svg" alt="Athlete" width={20} height={20} />
                 Athlete
               </li>
             </Link>
           )}
           <Link href="/about" passHref>
             <li
-              className={`link-animate hover:text-gray-300 ${selected === "about" && "text-gray-300"
+              className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "about" && "text-gray-300"
                 }`}
               onClick={() => setSelected("about")}
             >
+              <Image src="/images/about.svg" alt="About" width={20} height={20} />
               About
             </li>
           </Link>
