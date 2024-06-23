@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google"; 
 import { StarknetProvider } from "@/components/starknet-provider";
 import "./globals.css";
-import {Navbar} from "@/components/Shared/navbar/Navbar";
+import { Navbar } from "@/components/Shared/navbar/Navbar";
 import Footer from "@/components/Shared/footer/Footer";
 import { AthleteContextProvider } from "../../context/AthleteContext";
 import { UserContextProvider } from "../../context/UserContext";
@@ -21,12 +21,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-black text-white`}>
+      <body className={`${inter.className} bg-black text-white flex flex-col min-h-screen`}>
         <StarknetProvider>
           <AthleteContextProvider>
             <UserContextProvider>
               <Navbar />
-              {children}
+              <main className="flex-grow">
+                {children}
+              </main>
               <Footer />
             </UserContextProvider>
           </AthleteContextProvider>
