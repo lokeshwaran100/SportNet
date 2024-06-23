@@ -29,14 +29,14 @@ const recentFeesData = [
 
 // components/Stat.js
 
-const Stat = ({ label, value }) => (
+const Stat = ({ label, value }: { label: any, value: any }) => (
   <div className="bg-white p-4 rounded shadow">
     <div className="text-sm text-gray-500">{label}</div>
     <div className="text-xl font-bold">{value}</div>
   </div>
 );
 
-const page = () => {
+const Page = () => {
   const [totalCampaignFee, setTotalCampaignFee] = useState(0);
   const [totalBettingFee, setTotalBettingFee] = useState(0);
   const [totalSponsors, setTotalSponsors] = useState(0);
@@ -88,4 +88,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;
