@@ -28,7 +28,9 @@ export default function RootLayout({
             <UserContextProvider>
               <OwnerContextProvider>
                 <Navbar />
-                {children}
+                <main className="flex-grow">
+                  {children}
+                </main>
                 <Footer />
               </OwnerContextProvider>
             </UserContextProvider>
