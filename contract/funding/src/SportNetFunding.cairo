@@ -1,19 +1,21 @@
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait ISportNetCrowdFunding<TContractState> {
+pub trait ISportNetCrowdFunding<TContractState> {
     fn athlete_register(ref self: TContractState);
     fn create_campaign(ref self: TContractState, amount: u256);
     fn sponsor(ref self: TContractState, campaign_id: u128, amount: u256);
     fn claim(ref self: TContractState, campaign_id: u128);
     fn is_athlete_register(self: @TContractState, athlete: ContractAddress) -> bool;
     fn sponsor_share(self: @TContractState, athlete: ContractAddress, sponsor: ContractAddress) -> u128;
+    fn get_sponsors_by_athlete(self: @TContractState, athlete: ContractAddress) -> Array<ContractAddress>;
 }
 
 #[starknet::contract]
-mod SportNetCrowdFunding {
+pub mod SportNetCrowdFunding {
     use starknet::{get_caller_address, get_contract_address, ContractAddress, SyscallResultTrait};
     use starknet::syscalls::{call_contract_syscall};
+    use core::array::ArrayTrait;
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     
     #[storage]
@@ -32,6 +34,9 @@ mod SportNetCrowdFunding {
         // (athlete,sponsor) tuple and athlete pair
         athlete_sponsors: LegacyMap::<(ContractAddress, ContractAddress), u256>,
 
+        // (athlete,sponsor) tuple and bool pair
+        athlete_sponsor_exists: LegacyMap::<(ContractAddress, ContractAddress), bool>,
+
         // campaign ID and amount pair
         campaigns: LegacyMap::<u128, u256>,
 
@@ -46,6 +51,12 @@ mod SportNetCrowdFunding {
 
         // campaign count
         campaign_count: u128,
+
+        // sponsor count
+        sponsor_count: u128,
+
+        // sponsor ID and sponsor pair
+        sponsors: LegacyMap::<u128, ContractAddress>,
     }
 
     #[event]
@@ -142,6 +153,8 @@ mod SportNetCrowdFunding {
             assert!(result, "Transfer Failed!");
 
             let contributed = self.athlete_sponsors.read((athlete, sponsor));
+            let sponsorId = self.sponsor_count.read() + 1;
+            self.sponsors.write(sponsorId, sponsor);
             self.athlete_sponsors.write((athlete, sponsor), contributed + amount);
             self.athlete_funded.write(athlete, self.athlete_funded.read(athlete) + amount);
             self.campaign_amount.write(campaign_id, updated_campaign_amount);
@@ -199,6 +212,23 @@ mod SportNetCrowdFunding {
             let total_funded = self.athlete_funded.read(athlete);
 
             (sponsor_fund/total_funded).try_into().unwrap()
+        }
+
+        fn get_sponsors_by_athlete(self: @ContractState, athlete: ContractAddress) -> Array<ContractAddress> {
+            let sponsor_count = self.sponsor_count.read();
+            let mut sponsor_array: Array<ContractAddress> = ArrayTrait::new();
+            let mut index: u128 = 0;
+            loop {
+                if index == sponsor_count {
+                    break;
+                }
+                let sponsor = self.sponsors.read(index);
+                if self.athlete_sponsor_exists.read((athlete,sponsor)) {
+                    sponsor_array.append(sponsor);
+                }
+                index = index + 1;
+            };
+            return sponsor_array;
         }
     }
 }
