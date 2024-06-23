@@ -21,7 +21,7 @@ export const ProfileContainer: React.FC<ContainerProps> = ({ children, className
   
 export const Container: React.FC<ContainerProps> = ({ children, className }) => {
     return (
-      <div className={`relative max-w-10xl mx-auto px-2 w-full ${className}`}>
+      <div className={`relative max-w-[1440px] mx-auto px-2 w-full ${className}`}>
         {children}
       </div>
     );

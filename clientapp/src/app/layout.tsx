@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter } from "next/font/google"; 
 import { StarknetProvider } from "@/components/starknet-provider";
 import "./globals.css";
-import { Navbar } from "@/components/Shared/navbar/Navbar";
+import {Navbar} from "@/components/Shared/navbar/Navbar";
+import Footer from "@/components/Shared/footer/Footer";
 import { AthleteContextProvider } from "../../context/AthleteContext";
 import { UserContextProvider } from "../../context/UserContext";
 
@@ -24,8 +25,9 @@ export default function RootLayout({
         <StarknetProvider>
           <AthleteContextProvider>
             <UserContextProvider>
-              <Navbar/>
+              <Navbar />
               {children}
+              <Footer />
             </UserContextProvider>
           </AthleteContextProvider>
         </StarknetProvider>
