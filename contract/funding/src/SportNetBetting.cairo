@@ -15,6 +15,7 @@ pub trait ISportNetBetting<TContractState> {
     fn claimWinnings(ref self: TContractState, marketId: u128, receiver: ContractAddress);
     fn getWinnerShares(ref self: TContractState, marketId: u128) -> (u256, u256);
     fn checkMarketStatus(ref self: TContractState, marketId: u128, user: ContractAddress);
+    fn addWinningSponsors(ref self: TContractState, marketId: u128);
     fn getMarketCount(self: @TContractState) -> u128;
     fn getMarket(self: @TContractState, marketId: u128) -> SportNetBetting::Market;
     fn getContractOwner(self: @TContractState) -> ContractAddress;
@@ -169,7 +170,6 @@ pub mod SportNetBetting {
 
             // Check if the creator is a registered athlete
             assert!(ISportNetCrowdFundingDispatcher{contract_address: self.crowfundingContract.read()}.is_athlete_register(athlete), "Athlete is not registered yet!");
-
             let market = Market {
                 name,
                 description,
@@ -277,18 +277,18 @@ pub mod SportNetBetting {
             let market = self.markets.read(marketId);
             let winningOption = market.clone().winningOutcome.unwrap();
             let (opt1, opt2) = market.clone().outcomes;
-            let mut athlete_share: u256 = 0;
+            let mut sponsor_shares: u256 = 0;
             let mut winner_shares: u256 = 0;
             if opt1 == winningOption {
                 let profit_pot = opt2.amount;
-                winner_shares = (profit_pot * (80/100))/(opt1.opted.into());
-                athlete_share = (profit_pot - (winner_shares * opt1.opted.into()));
+                winner_shares = (profit_pot * (65/100))/(opt1.opted.into());
+                sponsor_shares = (profit_pot - (winner_shares * opt1.opted.into()));
             } else {
                 let profit_pot = opt1.amount;
-                winner_shares = (profit_pot * (80/100))/(opt2.opted.into());
-                athlete_share = (profit_pot - (winner_shares * opt2.opted.into()));
+                winner_shares = (profit_pot * (65/100))/(opt2.opted.into());
+                sponsor_shares = (profit_pot - (winner_shares * opt2.opted.into()));
             }
-            return (athlete_share, winner_shares);
+            return (sponsor_shares, winner_shares);
         }
 
         fn checkMarketStatus(ref self: ContractState, marketId: u128, user: ContractAddress) {
@@ -297,8 +297,7 @@ pub mod SportNetBetting {
             assert!(self.participant_exists.read((marketId, user)), "User is not part of the market");
 
             let market_user = self.market_participants.read((marketId,user));
-            let market_athlete = market.clone().athlete;
-            let (athlete_share, winner_shares) = self.getWinnerShares(marketId);
+            let (_sponsor_share, winner_shares) = self.getWinnerShares(marketId);
             if market_user.chosenOutcome == market.winningOutcome.unwrap() {
                 let winner = Winners {
                     user,
@@ -308,13 +307,32 @@ pub mod SportNetBetting {
                 self.market_winners.write((marketId,user), winner);
                 self.winner_exists.write((marketId, user), true);
             }
-            let athlete_win = Winners {
-                user: market_athlete,
-                wins: athlete_share,
-                claimed: false,
+            self.addWinningSponsors(marketId);
+        }
+
+        fn addWinningSponsors(ref self: ContractState, marketId: u128) {
+            let market = self.markets.read(marketId);
+            let athlete = market.athlete;
+            let funding_contract = self.crowfundingContract.read();
+            let sponsors = ISportNetCrowdFundingDispatcher{contract_address: funding_contract}.get_sponsors_by_athlete(athlete);
+            let mut index: u32 = 0;
+            let (sponsor_shares, _winner_shares) = self.getWinnerShares(marketId);
+            loop {
+                if index == sponsors.len() {
+                    break;
+                }
+                let sponsor_user = sponsors.at(index);
+                let sponsor_contribution = ISportNetCrowdFundingDispatcher{contract_address: funding_contract}.sponsor_share(athlete,sponsor_user.clone());
+                let sponsor_wins: u256 = sponsor_contribution.into() * sponsor_shares;
+                let sponsor_win = Winners {
+                    user: sponsor_user.clone(),
+                    wins: sponsor_wins,
+                    claimed: false,
+                };
+                self.market_winners.write((marketId, sponsor_user.clone()), sponsor_win);
+                self.winner_exists.write((marketId, sponsor_user.clone()), true);
+                index.add_eq(1);
             };
-            self.market_winners.write((marketId, market_athlete), athlete_win);
-            self.winner_exists.write((marketId, market_athlete), true);
         }
 
         fn getMarketCount(self: @ContractState) -> u128 {
@@ -335,7 +353,7 @@ pub mod SportNetBetting {
                 }
                 let currMarket = self.markets.read(index);
                 markets.append(currMarket);
-                index = index + 1;
+                index.add_eq(1);
             };
             return markets;
         }
@@ -349,34 +367,45 @@ pub mod SportNetBetting {
 // #[cfg(test)]
 // mod tests {
 //     use super::{ SportNetBetting, ISportNetBettingDispatcher, ISportNetBettingDispatcherTrait };
-//     use starknet::{ ContractAddress, syscalls::deploy_syscall };
+//     use funding::SportNetFunding::{ SportNetCrowdFunding ,ISportNetCrowdFundingDispatcher, ISportNetCrowdFundingDispatcherTrait };
+//     use starknet::{ ContractAddress, syscalls::deploy_syscall, contract_address_const, get_caller_address, get_contract_address };
+//     use core::result::ResultTrait;
+//     use starknet::class_hash::ClassHash;
+//     use snforge_std::{declare, start_mock_call, test_address, start_cheat_caller_address, stop_cheat_caller_address, cheat_caller_address_global, ContractClassTrait };
+//     // use starknet::class_hash::Felt252TryIntoClassHash;
+//     // use option::OptionTrait;
+//     // use traits::TryInto;
 
-//     fn deploy_contract() -> ISportNetBettingDispatcher {
-//         let mut calldata = ArrayTrait::new();
-//         let (address0, _) = deploy_syscall(
-//             SportNetBetting::TEST_CLASS_HASH.try_into().unwrap(), 0, calldata.span(), false
-//         )
-//             .unwrap();
-//         let contract0 = ISportNetBettingDispatcher { contract_address: address0 };
-//         contract0
+//     fn deploy_betting_contract() -> ContractAddress {
+//         let betting_class_hash = declare("SportNetBetting").unwrap();
+//         let mut calldata = array![];
+//         let (contract_address, _) = betting_class_hash.deploy(@calldata).unwrap();
+//         contract_address
 //     }
 
-//     #[test]
-//     #[available_gas(1000000)]
-//     fn test_get() {
-//         let contract = deploy_contract();
-//         let data = contract.get();
-
-//         assert_eq!(0, data);
+//     fn deploy_funding_contract() -> ContractAddress {
+//         let funding_class_hash = declare("SportNetCrowdFunding").unwrap();
+//         let mut calldata = array![];
+//         let (contract_address, _) = funding_class_hash.deploy(@calldata).unwrap();
+//         contract_address
 //     }
 
-//     #[test]
-//     #[available_gas(1000000)]
-//     fn test_set() {
-//         let contract = deploy_contract();
-//         contract.set(10);
-//         let data = contract.get();
+//     // #[test]
+//     // #[available_gas(1000000)]
+//     // fn test_get() {
+//     //     let contract = deploy_contract();
+//     //     let data = contract.get();
 
-//         assert_eq!(10, data);
-//     }
+//     //     assert_eq!(0, data);
+//     // }
+
+//     // #[test]
+//     // #[available_gas(1000000)]
+//     // fn test_set() {
+//     //     let contract = deploy_contract();
+//     //     contract.set(10);
+//     //     let data = contract.get();
+
+//     //     assert_eq!(10, data);
+//     // }
 // }
