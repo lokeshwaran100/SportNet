@@ -32,6 +32,9 @@ export const Navbar = () => {
     if (pathname.includes("/bet")) {
       return "bet";
     }
+    if (pathname.includes("/roadmap")) {
+      return "roadmap";
+    }
     if (pathname.includes("/about")) {
       return "about";
     }
@@ -61,11 +64,10 @@ export const Navbar = () => {
             <h1 className="font-bold text-2xl cursor-pointer">SportNet</h1>
           </Link>
         </div>
-        <ul className="flex gap-10 text-lg">
+        <ul className="flex gap-5 md:gap-10 text-lg overflow-x-auto">
           <Link href="/" passHref>
             <li
-              className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "home" && "text-gray-300"
-                }`}
+              className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "home" && "text-gray-300"}`}
               onClick={() => setSelected("home")}
             >
               <Image src="/images/ath.svg" alt="Home" width={20} height={20} />
@@ -74,11 +76,10 @@ export const Navbar = () => {
           </Link>
           {address ? (
             <>
-              {!userType && (
+              {userType !== UserType.ATHLETE && (
                 <Link href="/sponsor" passHref>
                   <li
-                    className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "sponsor" && "text-gray-300"
-                      }`}
+                    className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "sponsor" && "text-gray-300"}`}
                     onClick={() => setSelected("sponsor")}
                   >
                     <Image src="/images/spons.svg" alt="Sponsor" width={20} height={20} />
@@ -101,11 +102,10 @@ export const Navbar = () => {
           )}
           {address ? (
             <>
-              {!userType && (
+              {userType !== UserType.ATHLETE && (
                 <Link href="/bet" passHref>
                   <li
-                    className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "bet" && "text-gray-300"
-                      }`}
+                    className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "bet" && "text-gray-300"}`}
                     onClick={() => setSelected("bet")}
                   >
                     <Image src="/images/bet-icon.svg" alt="Bet" width={20} height={20} />
@@ -126,11 +126,10 @@ export const Navbar = () => {
               </li>
             </AlertDialogModal>
           )}
-          {address && userType == UserType.ATHLETE && (
+          {address && userType === UserType.ATHLETE && (
             <Link href="/athlete" passHref>
               <li
-                className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "athlete" && "text-gray-300"
-                  }`}
+                className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "athlete" && "text-gray-300"}`}
                 onClick={() => setSelected("athlete")}
               >
                 <Image src="/images/ath.svg" alt="Athlete" width={20} height={20} />
@@ -138,10 +137,18 @@ export const Navbar = () => {
               </li>
             </Link>
           )}
+          <Link href="#roadmap" passHref>
+            <li
+              className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "roadmap" && "text-gray-300"}`}
+              onClick={() => setSelected("roadmap")}
+            >
+              <Image src="/images/roadmap.svg" alt="Roadmap" width={20} height={20} />
+              Roadmap
+            </li>
+          </Link>
           <Link href="/about" passHref>
             <li
-              className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "about" && "text-gray-300"
-                }`}
+              className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "about" && "text-gray-300"}`}
               onClick={() => setSelected("about")}
             >
               <Image src="/images/about.svg" alt="About" width={20} height={20} />
