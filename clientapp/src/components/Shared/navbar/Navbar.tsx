@@ -108,7 +108,7 @@ export const Navbar = () => {
                     className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "bet" && "text-gray-300"}`}
                     onClick={() => setSelected("bet")}
                   >
-                    <Image src="/images/bet-icon.svg" alt="Bet" width={20} height={20} />
+                    <Image src="/images/bet.svg" alt="Bet" width={20} height={20} />
                     Bet
                   </li>
                 </Link>
