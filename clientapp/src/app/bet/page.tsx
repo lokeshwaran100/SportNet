@@ -6,9 +6,12 @@ import { Container } from '@/components/containers/Containers'
 import SponsorFund from '@/components/Shared/ui/SponsorFund'
 import Bet from '@/components/Shared/ui/Bet'
 import { BetCardComponent } from '@/components/custom/BetCard'
+import { useUserContext } from '../../../context/UserContext'
 
 const Page = () => {
   const { bettings, bettingContract } = useOwnerContext();
+  const {participants}=useUserContext();
+  const [newBettings,setNewBettings]=useState(bettings.filter((bet)=>!participants.find((participant)=>participant.betId===bet.id)));
 
   return (
     <>
