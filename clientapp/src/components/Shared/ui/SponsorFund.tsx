@@ -40,20 +40,8 @@ const SponsorFund = ({id}:{id:number}) => {
       calls,
     });
 
-    const stkCalls = useMemo(() => {
-      const tx = {
-        contractAddress: '0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D',
-        entrypoint: 'approve',
-        calldata: [process.env.NEXT_PUBLIC_CONTRACT_ADDRESS, cairo.uint256(donatedAmount)]
-      };
-      return Array(1).fill(tx);
-    }, [address, donatedAmount]);
-
-    const { write } = useContractWrite({ calls: stkCalls });
-
     const donateAmount=async(amount:number)=>{
       try{
-        const apporveRes=await write();
         const res=await writeAsync();
         storeDonatedAmount(id, amount);
         console.log("the sponsoredAmount is", amount);
