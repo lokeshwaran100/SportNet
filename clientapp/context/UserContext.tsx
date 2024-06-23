@@ -6,6 +6,7 @@ import axios from 'axios';
 // context type
 interface UserContextType {
   allCampaigns: any[];
+  participants: any[];
 }
 
 // Creating the context with an initial value
@@ -20,11 +21,13 @@ interface UserContextProviderProps {
 export const UserContextProvider: React.FC<UserContextProviderProps> = ({ children }) => {
   const [allCampaigns,setAllCampaigns]=useState([]);
   const [allBets,setAllBets]=useState([]);
+  const [participants,setParticipants]=useState([]);
   
   const url=process.env.NEXT_PUBLIC_URL;
 
   useEffect(()=>{
     fetchCampaigns();
+    fetchParticipants();
     // fetchBets();
   },[]);
 
@@ -38,6 +41,13 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({ childr
     setAllCampaigns(data);
   }
 
+  const fetchParticipants=async ()=>{
+    const res=await axios.get(`${url}api/participant`);
+    const data=res.data.message;
+    console.log("the participants are fetched", data);
+    setParticipants(data);
+  }
+
   const sponsorAthlete=(sponsorData: any)=>{
     console.log("the sponsor data is", sponsorData);
   }
@@ -46,7 +56,7 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({ childr
   }
   
   // add all the function here
-  return <UserContext.Provider value={{allCampaigns}}>{children}</UserContext.Provider>;
+  return <UserContext.Provider value={{allCampaigns, participants}}>{children}</UserContext.Provider>;
 };
 
 // custom hook for accessing the user context 

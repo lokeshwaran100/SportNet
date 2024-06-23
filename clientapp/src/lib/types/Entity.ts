@@ -5,5 +5,6 @@ export type Athlete = {
 }
 
 export type Betting = {
+  id: any;
 
 }
