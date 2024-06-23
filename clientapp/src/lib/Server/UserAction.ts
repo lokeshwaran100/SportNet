@@ -2,7 +2,7 @@
 import { connectToDB } from "../connectToDb";
 import Campaign from "../models/Campaign";
 
-export async function donateAmount(id:number, amount:number) {
+export async function storeDonatedAmount (id:number, amount:number) {
     connectToDB();
     Campaign.findOne({id:id})
     .then((res:any)=>{

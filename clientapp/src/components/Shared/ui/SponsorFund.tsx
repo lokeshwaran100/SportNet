@@ -5,8 +5,12 @@ import { Button } from '@/components/ui/button'
 import { useMemo } from 'react'
 import { useContractWrite } from '@starknet-react/core'
 import { useAthleteContext } from '../../../../context/AthleteContext'
+import { storeDonatedAmount } from '@/lib/Server/UserAction'
+import { useAccount } from '@starknet-react/core'
+import { cairo } from 'starknet'
 
 const SponsorFund = ({id}:{id:number}) => {
+    const { address } = useAccount();
     const [donatedAmount,setDonatedAmount]=useState(0);
     const SCALE_FACTOR = BigInt(10 ** 18);
     function toBigIntAmount(amount: number) {
@@ -25,8 +29,8 @@ const SponsorFund = ({id}:{id:number}) => {
     const { contract }=useAthleteContext();
     const calls = useMemo(() => {
         if (!contract) return [];
-        return contract.populateTransaction["sponsor"]!(toBigIntAmount(id),toBigIntAmount(donatedAmount));
-      }, [contract,donatedAmount]);
+        return contract.populateTransaction["sponsor"]!(id,toBigIntAmount(donatedAmount));
+      }, [contract, donatedAmount]);
       
     const {
       writeAsync,
@@ -36,9 +40,27 @@ const SponsorFund = ({id}:{id:number}) => {
       calls,
     });
 
+    const stkCalls = useMemo(() => {
+      const tx = {
+        contractAddress: '0x04718f5a0Fc34cC1AF16A1cdee98fFB20C31f5cD61D6Ab07201858f4287c938D',
+        entrypoint: 'approve',
+        calldata: [process.env.NEXT_PUBLIC_CONTRACT_ADDRESS, cairo.uint256(donatedAmount)]
+      };
+      return Array(1).fill(tx);
+    }, [address, donatedAmount]);
+
+    const { write } = useContractWrite({ calls: stkCalls });
+
     const donateAmount=async(amount:number)=>{
-      const res=await writeAsync();
-      console.log("the sponsoredAmount is", amount);
+      try{
+        const apporveRes=await write();
+        const res=await writeAsync();
+        storeDonatedAmount(id, amount);
+        console.log("the sponsoredAmount is", amount);
+      }
+      catch(err){
+        console.log("error in donating amount", err);
+      }
     }
     
     const onSubmit=()=>{
