@@ -3,8 +3,11 @@ import { DialogModal } from '@/components/custom/DialogModal';
 import { Button } from '@/components/ui/button';
 import { useAthleteContext } from '../../../../context/AthleteContext';
 import data from '../../../../data/sportsData.json';
-import { useContractWrite } from '@starknet-react/core';
+import {useContractWrite } from '@starknet-react/core';
 import { storeCampaignDetails } from '@/lib/Server/AthleteActions';
+import { useBlockNumber } from "@starknet-react/core";
+import { BlockNumber , num, RpcProvider, hash} from "starknet";
+import { hexToDecimal } from '@/lib/utils';
 
 type RaiseFundProps={
     address: string;
@@ -20,6 +23,10 @@ const RaiseFund = ({address}:RaiseFundProps) => {
         amount: 0,
         equipment: '',
     });
+    const { data:blockData, isLoading, isError } = useBlockNumber({
+        refetchInterval: false,
+        blockIdentifier: 'latest' as BlockNumber
+    })
 
     const {contract}=useAthleteContext();
 
@@ -44,22 +51,28 @@ const RaiseFund = ({address}:RaiseFundProps) => {
 
     const createCampaign = async (campaignData: any) =>{
         try{
-        //   setArgs([toBigIntAmount(campaignData.amount)]);
-        //   setCallFunction("create_campaign");
+          //   setArgs([toBigIntAmount(campaignData.amount)]);
+          //   setCallFunction("create_campaign");
           const res=await writeAsync();
-        //   const eventH = num.toHex(hash.starknetKeccak('create_campaign'));
-        //   console.log("event name hash =", eventH);
-        //   const myKeys = [[eventH]];
-        //   const result = await myProvider.getEvents({
-        //     address: '0x030d0b10f64347c02dfb01fc509be7cb6dd83eafda366c851c6b56475fe170a8',
-        //     from_block: { block_number: 75448 },
-        //     to_block:  { block_number: 75448 },
-        //     keys: myKeys,
-        //     chunk_size: 50,
-        //     continuation_token: undefined,
-        //   });
-        //   console.log("rawEvents=", result.events);
-          const newCampaignData = {...campaignData, address: address, id: 0};
+          const eventH = num.toHex(hash.starknetKeccak('CreatedCampaign'));
+          console.log("event name hash =", eventH); 
+          const myKeys = [[eventH]];
+          const myProvider = new RpcProvider({ nodeUrl: "https://starknet-sepolia.public.blastapi.io" });
+          //   console.log("the block number is", blockData?.block_number)
+          const providerRes=await myProvider.getBlockNumber();
+          console.log("the latest block from the my provider", providerRes);
+          const result = await myProvider.getEvents({
+            address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
+            from_block: { block_number: providerRes },
+            to_block:  { block_number: providerRes },
+            keys: myKeys,
+            chunk_size: 50,
+            continuation_token: undefined,
+          });
+          console.log("rawEvents=", result.events);
+          console.log("the key form the event is",result.events[0].keys[1]);
+          const id=hexToDecimal(result.events[0].keys[1]);
+          const newCampaignData = {...campaignData, address: address, id: id};
           console.log("Saving campaign data:", newCampaignData);
           await storeCampaignDetails(newCampaignData);
           console.log("Saved campaign data:", newCampaignData);
