@@ -7,7 +7,6 @@ pub trait ISportNetBetting<TContractState> {
         name: ByteArray,
         description: ByteArray,
         athlete: ContractAddress,
-        options: (felt252, felt252),
         minBet: u256,
     );
     fn betOnMarket(ref self: TContractState, marketId: u128, outcome: u8, amount: u256);
@@ -156,14 +155,12 @@ pub mod SportNetBetting {
             name: ByteArray,
             description: ByteArray,
             athlete: ContractAddress,
-            options: (felt252, felt252),
             minBet: u256,
         ) {
             let user: ContractAddress = get_caller_address();
             assert!(user == self.getContractOwner(), "Only owner can create a market");
-            let (scenario1, scenario2) = options;
-            let mut token1 = Scenarios { name: scenario1, opted: 0_u128, amount: 0_u256};
-            let mut token2 = Scenarios { name: scenario2, opted: 0_u128, amount: 0_u256};
+            let mut token1 = Scenarios { name: 'Win', opted: 0_u128, amount: 0_u256};
+            let mut token2 = Scenarios { name: 'Loss', opted: 0_u128, amount: 0_u256};
 
             let tokens = (token1, token2);
 
