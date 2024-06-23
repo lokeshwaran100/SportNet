@@ -49,7 +49,7 @@ export const Navbar = () => {
     console.log(address);
     if (athletes.find((athlete: any) => athlete.address === address)) {
       setUserType(UserType.ATHLETE);
-    } else if (address === "0x458d97bd1fb0dec4748f648a95569390165c781870dbc9a5b54f33a626f0bf") {
+    } else if (address === "0x6e577ed701a36f88a478fbfb78d083b36fc1ad4f937c201d3076939f26b4316") {
       setUserType(UserType.OWNER);
     } else {
       setUserType(UserType.USER);

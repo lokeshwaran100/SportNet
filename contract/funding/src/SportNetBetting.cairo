@@ -2,10 +2,8 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 pub trait ISportNetBetting<TContractState> {
-    fn createMarket(
+    fn create_market(
         ref self: TContractState,
-        name: ByteArray,
-        description: ByteArray,
         athlete: ContractAddress,
         minBet: u256,
     );
@@ -74,8 +72,6 @@ pub mod SportNetBetting {
 
     #[derive(Drop, Serde, Clone, starknet::Store, PartialEq, Eq)]
     pub struct Market {
-        name: ByteArray,
-        description: ByteArray,
         pub athlete: ContractAddress,
         pub outcomes: (Scenarios, Scenarios),
         isSettled: bool,
@@ -150,10 +146,8 @@ pub mod SportNetBetting {
     #[abi(embed_v0)]
     impl SportNetBetting of super::ISportNetBetting<ContractState> {
 
-        fn createMarket(
+        fn create_market(
             ref self: ContractState,
-            name: ByteArray,
-            description: ByteArray,
             athlete: ContractAddress,
             minBet: u256,
         ) {
@@ -167,8 +161,6 @@ pub mod SportNetBetting {
             // Check if the creator is a registered athlete
             assert!(ISportNetCrowdFundingDispatcher{contract_address: self.crowfundingContract.read()}.is_athlete_register(athlete), "Athlete is not registered yet!");
             let market = Market {
-                name,
-                description,
                 athlete,
                 outcomes: tokens,
                 isSettled: false,
