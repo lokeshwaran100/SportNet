@@ -32,7 +32,7 @@ export const Navbar = () => {
     if (pathname.includes("/bet")) {
       return "bet";
     }
-    if (pathname.includes("/roadmap")) {
+    if (pathname.includes("#roadmap")) {
       return "roadmap";
     }
     if (pathname.includes("/about")) {
@@ -46,10 +46,10 @@ export const Navbar = () => {
   }, [address]);
 
   const checkUser = () => {
-    console.log(address)
+    console.log(address);
     if (athletes.find((athlete: any) => athlete.address === address)) {
       setUserType(UserType.ATHLETE);
-    } else if (address === "0x6e577ed701a36f88a478fbfb78d083b36fc1ad4f937c201d3076939f26b4316") {
+    } else if (address === "0x458d97bd1fb0dec4748f648a95569390165c781870dbc9a5b54f33a626f0bf") {
       setUserType(UserType.OWNER);
     } else {
       setUserType(UserType.USER);
@@ -137,7 +137,7 @@ export const Navbar = () => {
               </li>
             </Link>
           )}
-          <Link href="#roadmap" passHref>
+          <Link href="/#roadmap" passHref>
             <li
               className={`flex items-center gap-2 link-animate hover:text-gray-300 ${selected === "roadmap" && "text-gray-300"}`}
               onClick={() => setSelected("roadmap")}
