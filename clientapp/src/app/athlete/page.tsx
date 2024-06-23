@@ -22,7 +22,7 @@ const campaignsData = [
   { id: 1, name: 'Lifting Shoes', funds: 1500, sponsors: 12, isClaimed: false },
 ];
 
-const page = () => {
+const Page = () => {
   const [sponsorCount, setSponsorCount] = useState(0);
   const [totalFunds, setTotalFunds] = useState(0);
   const [reputation, setReputation] = useState(0);
@@ -135,4 +135,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;

@@ -3,7 +3,7 @@ use starknet::ContractAddress;
 #[starknet::interface]
 pub trait ISportNetCrowdFunding<TContractState> {
     fn athlete_register(ref self: TContractState);
-    fn create_campaign(ref self: TContractState, amount: u256);
+    fn create_campaign(ref self: TContractState, amount: u256) -> u128;
     fn sponsor(ref self: TContractState, campaign_id: u128, amount: u256);
     fn claim(ref self: TContractState, campaign_id: u128);
     fn is_athlete_register(self: @TContractState, athlete: ContractAddress) -> bool;
@@ -113,7 +113,7 @@ pub mod SportNetCrowdFunding {
             self.emit(Registered {athlete});
         }
 
-        fn create_campaign(ref self: ContractState, amount: u256) {
+        fn create_campaign(ref self: ContractState, amount: u256) -> u128 {
             let athlete: ContractAddress = get_caller_address();
             assert!(self.athletes.read(athlete), "Athlete is not registered!");
             assert!(amount > 0, "Campaign amount cannot be 0");
@@ -127,6 +127,8 @@ pub mod SportNetCrowdFunding {
             self.campaign_count.write(campaign_id + 1_u128);
 
             self.emit(CreatedCampaign {campaign_id, athlete, amount});
+
+            return campaign_id;
         }
 
         fn sponsor(ref self: ContractState, campaign_id: u128, amount: u256) {

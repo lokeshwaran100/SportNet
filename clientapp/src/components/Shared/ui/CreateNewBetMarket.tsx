@@ -5,14 +5,18 @@ import { useAthleteContext } from '../../../../context/AthleteContext';
 import { useContractWrite } from '@starknet-react/core';
 import { storeCampaignDetails } from '@/lib/Server/AthleteActions';
 import { storeNewBettingDetails } from '@/lib/Server/OwnerActions';
+import { RpcProvider } from 'starknet';
+import { useOwnerContext } from '../../../../context/OwnerContext';
 
 
 const RaiseFund = () => {
-  const { contract, athletes } = useAthleteContext();
+  const { bettingContract } = useOwnerContext();
+  const { athletes } = useAthleteContext();
   const [market, setMarket] = useState({
     name: '',
     description: '',
     athlete: '',
+    options: ["Win", "Lose"],
     min_bet: 0,
   });
 
@@ -21,27 +25,32 @@ const RaiseFund = () => {
     return BigInt(Math.round(amount * Number(SCALE_FACTOR)));
   }
 
-  const calls = useMemo(() => {
-    if (!contract) return [];
-    // return contract.populateTransaction["createMarket"]!(market.name,
-    //   market.description,
-    //   market.athlete,
-    //   market.options,
-    //   toBigIntAmount(market.minBet));
-    return [];
-  }, [contract, market]);
+  // const calls = useMemo(() => {
+  //   if (!bettingContract) return [];
+  //   return bettingContract.populateTransaction["createMarket"]!(
+  //     market.name,
+  //     market.description,
+  //     market.athlete,
+  //     market.options,
+  //     toBigIntAmount(market.min_bet));
+  // }, [bettingContract, market]);
 
-  const {
-    writeAsync,
-    data,
-    isPending,
-  } = useContractWrite({
-    calls,
-  });
+  // const {
+  //   writeAsync,
+  //   data,
+  //   isPending,
+  // } = useContractWrite({
+  //   calls,
+  // });
 
   const createMarket = async (marketData: any) => {
     try {
       // const res = await writeAsync();
+      // console.log("Transaction Hash: ", res.transaction_hash);
+
+      // const myProvider = new RpcProvider({ nodeUrl: "https://starknet-sepolia.public.blastapi.io" });
+      // let wait_for = await myProvider.waitForTransaction(res.transaction_hash);
+
       const newBetting = { ...marketData, id: 0 };
       await storeNewBettingDetails(newBetting);
     }
