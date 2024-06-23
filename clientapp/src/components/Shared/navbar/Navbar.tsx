@@ -8,10 +8,17 @@ import { AlertDialogModal } from "@/components/custom/AlertDialogModal";
 import { useAthleteContext } from "../../../../context/AthleteContext";
 import RegisterAthlete from "../ui/RegisterAthlete";
 import RaiseFund from "../ui/RaiseFund";
+import CreateNewBetMarket from "../ui/CreateNewBetMarket";
+
+const enum UserType {
+  USER,
+  OWNER,
+  ATHLETE
+}
 
 export const Navbar = () => {
   const { athletes } = useAthleteContext();
-  const [isAthlete, setIsAthlete] = useState(false);
+  const [userType, setUserType] = useState(UserType.USER);
   const pathname = usePathname();
   const { address } = useAccount();
   const [selected, setSelected] = useState(() => {
@@ -30,13 +37,18 @@ export const Navbar = () => {
   });
 
   useEffect(() => {
-    checkIsAthlete();
+    checkUser();
     console.log("The user address is", address);
   }, [address]);
 
-  const checkIsAthlete = () => {
+  const checkUser = () => {
+    console.log(address)
     if (athletes.find((athlete: any) => athlete.address === address)) {
-      setIsAthlete(true);
+      setUserType(UserType.ATHLETE);
+    } else if (address === "0x6e577ed701a36f88a478fbfb78d083b36fc1ad4f937c201d3076939f26b4316") {
+      setUserType(UserType.OWNER);
+    } else {
+      setUserType(UserType.USER);
     }
   };
 
@@ -51,9 +63,8 @@ export const Navbar = () => {
         <ul className="flex gap-20 text-lg">
           <Link href="/" passHref>
             <li
-              className={`link-animate hover:text-gray-300 ${
-                selected === "home" && "text-gray-300"
-              }`}
+              className={`link-animate hover:text-gray-300 ${selected === "home" && "text-gray-300"
+                }`}
               onClick={() => setSelected("home")}
             >
               Home
@@ -61,12 +72,11 @@ export const Navbar = () => {
           </Link>
           {address ? (
             <>
-              {!isAthlete && (
+              {!userType && (
                 <Link href="/sponsor" passHref>
                   <li
-                    className={`link-animate hover:text-gray-300 ${
-                      selected === "sponsor" && "text-gray-300"
-                    }`}
+                    className={`link-animate hover:text-gray-300 ${selected === "sponsor" && "text-gray-300"
+                      }`}
                     onClick={() => setSelected("sponsor")}
                   >
                     Sponsor
@@ -87,12 +97,11 @@ export const Navbar = () => {
           )}
           {address ? (
             <>
-              {!isAthlete && (
+              {!userType && (
                 <Link href="/bet" passHref>
                   <li
-                    className={`link-animate hover:text-gray-300 ${
-                      selected === "sponsor" && "text-gray-300"
-                    }`}
+                    className={`link-animate hover:text-gray-300 ${selected === "sponsor" && "text-gray-300"
+                      }`}
                     onClick={() => setSelected("sponsor")}
                   >
                     Bet
@@ -111,12 +120,11 @@ export const Navbar = () => {
               </li>
             </AlertDialogModal>
           )}
-          {address && isAthlete && (
+          {address && userType == UserType.ATHLETE && (
             <Link href="/athlete" passHref>
               <li
-                className={`link-animate hover:text-gray-300 ${
-                  selected === "home" && "text-gray-300"
-                }`}
+                className={`link-animate hover:text-gray-300 ${selected === "home" && "text-gray-300"
+                  }`}
                 onClick={() => setSelected("athlete")}
               >
                 Athlete
@@ -125,9 +133,8 @@ export const Navbar = () => {
           )}
           <Link href="/about" passHref>
             <li
-              className={`link-animate hover:text-gray-300 ${
-                selected === "about" && "text-gray-300"
-              }`}
+              className={`link-animate hover:text-gray-300 ${selected === "about" && "text-gray-300"
+                }`}
               onClick={() => setSelected("about")}
             >
               About
@@ -135,9 +142,10 @@ export const Navbar = () => {
           </Link>
         </ul>
         <div className="flex gap-5 my-auto h-full">
+          {address && userType === UserType.ATHLETE && <RaiseFund address={address} />}
+          {address && userType === UserType.USER && <RegisterAthlete address={address} />}
+          {address && userType === UserType.OWNER && <CreateNewBetMarket />}
           <WalletConnectBar />
-          {address && isAthlete && <RaiseFund address={address} />}
-          {address && !isAthlete && <RegisterAthlete address={address} />}
         </div>
       </div>
     </nav>
