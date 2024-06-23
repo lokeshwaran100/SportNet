@@ -15,11 +15,10 @@ pub trait ISportNetBetting<TContractState> {
     fn claimWinnings(ref self: TContractState, marketId: u128, receiver: ContractAddress);
     fn getWinnerShares(ref self: TContractState, marketId: u128) -> (u256, u256);
     fn checkMarketStatus(ref self: TContractState, marketId: u128, user: ContractAddress);
-    fn addWinningSponsors(ref self: TContractState, marketId: u128);
+    fn addWinningSponsors(ref self: TContractState, marketId: u128, sponsor_shares: u256);
     fn getMarketCount(self: @TContractState) -> u128;
     fn getMarket(self: @TContractState, marketId: u128) -> SportNetBetting::Market;
     fn getContractOwner(self: @TContractState) -> ContractAddress;
-    fn getAllMarkets(self: @TContractState) -> Array<SportNetBetting::Market>;
 }
 
 #[starknet::contract]
@@ -161,7 +160,7 @@ pub mod SportNetBetting {
             minBet: u256,
         ) {
             let user: ContractAddress = get_caller_address();
-            assert!(user == self.owner.read(), "Only owner can create a market");
+            assert!(user == self.getContractOwner(), "Only owner can create a market");
             let (scenario1, scenario2) = options;
             let mut token1 = Scenarios { name: scenario1, opted: 0_u128, amount: 0_u256};
             let mut token2 = Scenarios { name: scenario2, opted: 0_u128, amount: 0_u256};
@@ -183,17 +182,17 @@ pub mod SportNetBetting {
                 moneyInPool: 0,
             };
 
-            let market_id = self.market_count.read() + 1;
+            let market_id = self.getMarketCount() + 1;
 
             self.market_count.write(market_id);
             self.markets.write(market_id, market);
-            let createdMarket = self.markets.read(market_id);
+            let createdMarket = self.getMarket(market_id);
             self.emit(CreatedMarket {market_id, market: createdMarket, athlete, amount: 0_u256});
         }
 
         fn betOnMarket(ref self: ContractState, marketId: u128, outcome: u8, amount: u256) {
             let beter: ContractAddress = get_caller_address();
-            let mut market = self.markets.read(marketId);
+            let mut market = self.getMarket(marketId);
             assert!(market.clone().isVerified, "Market does not exist");
             assert!(market.clone().isActive, "Market has already been resolved");
             assert!(amount >= market.clone().minBet, "Market accept a larger minimum bet amount");
@@ -236,9 +235,9 @@ pub mod SportNetBetting {
         }
 
         fn resolveMarket(ref self: ContractState, marketId: u128, winningOption: u8) {
-            assert!(get_caller_address() == self.owner.read(), "Only the owner can setlle markets");
+            assert!(get_caller_address() == self.getContractOwner(), "Only the owner can setlle markets");
             assert!(winningOption == 0_u8 || winningOption == 1_u8, "Invalid option provided");
-            let mut currentMarket = self.markets.read(marketId);
+            let mut currentMarket = self.getMarket(marketId);
             assert!(currentMarket.clone().isActive == true, " Only active markets can be resolved");
             currentMarket.isActive = false;
             currentMarket.isSettled = true;
@@ -259,6 +258,7 @@ pub mod SportNetBetting {
             assert!(self.winner_exists.read((marketId, user)), "User is not one of the winners in the market");
             let user_wins = self.market_winners.read((marketId, user));
             assert!(!user_wins.claimed, "User has already claimed their winning funds");
+            assert!(user_wins.wins > 0, "User wins are 0");
             let token_address: ContractAddress = self.token_address.read();
             let contract_address = get_contract_address();
             let winner = Winners {
@@ -274,7 +274,7 @@ pub mod SportNetBetting {
         }
 
         fn getWinnerShares(ref self: ContractState, marketId: u128) -> (u256, u256) {
-            let market = self.markets.read(marketId);
+            let market = self.getMarket(marketId);
             let winningOption = market.clone().winningOutcome.unwrap();
             let (opt1, opt2) = market.clone().outcomes;
             let mut sponsor_shares: u256 = 0;
@@ -292,12 +292,12 @@ pub mod SportNetBetting {
         }
 
         fn checkMarketStatus(ref self: ContractState, marketId: u128, user: ContractAddress) {
-            let market = self.markets.read(marketId);
+            let market = self.getMarket(marketId);
             assert!(market.isSettled, "Market has not been resolved yet!");
             assert!(self.participant_exists.read((marketId, user)), "User is not part of the market");
 
             let market_user = self.market_participants.read((marketId,user));
-            let (_sponsor_share, winner_shares) = self.getWinnerShares(marketId);
+            let (sponsor_share, winner_shares) = self.getWinnerShares(marketId);
             if market_user.chosenOutcome == market.winningOutcome.unwrap() {
                 let winner = Winners {
                     user,
@@ -307,23 +307,25 @@ pub mod SportNetBetting {
                 self.market_winners.write((marketId,user), winner);
                 self.winner_exists.write((marketId, user), true);
             }
-            self.addWinningSponsors(marketId);
+            self.addWinningSponsors(marketId, sponsor_share);
         }
 
-        fn addWinningSponsors(ref self: ContractState, marketId: u128) {
-            let market = self.markets.read(marketId);
+        fn addWinningSponsors(ref self: ContractState, marketId: u128, sponsor_shares: u256) {
+            let market = self.getMarket(marketId);
             let athlete = market.athlete;
             let funding_contract = self.crowfundingContract.read();
             let sponsors = ISportNetCrowdFundingDispatcher{contract_address: funding_contract}.get_sponsors_by_athlete(athlete);
             let mut index: u32 = 0;
             let (sponsor_shares, _winner_shares) = self.getWinnerShares(marketId);
+            let platform_fee = sponsor_shares * (1/100);
+            let sponsor_shares_after_fees = sponsor_shares - platform_fee;
             loop {
                 if index == sponsors.len() {
                     break;
                 }
                 let sponsor_user = sponsors.at(index);
                 let sponsor_contribution = ISportNetCrowdFundingDispatcher{contract_address: funding_contract}.sponsor_share(athlete,sponsor_user.clone());
-                let sponsor_wins: u256 = sponsor_contribution.into() * sponsor_shares;
+                let sponsor_wins: u256 = sponsor_contribution.into() * sponsor_shares_after_fees;
                 let sponsor_win = Winners {
                     user: sponsor_user.clone(),
                     wins: sponsor_wins,
@@ -333,6 +335,14 @@ pub mod SportNetBetting {
                 self.winner_exists.write((marketId, sponsor_user.clone()), true);
                 index.add_eq(1);
             };
+            let owner = self.getContractOwner();
+            let platform_fee_owner = Winners {
+                user: owner,
+                wins: platform_fee,
+                claimed: false,
+            };
+            self.market_winners.write((marketId, owner), platform_fee_owner);
+            self.winner_exists.write((marketId, owner), true);
         }
 
         fn getMarketCount(self: @ContractState) -> u128 {
@@ -340,22 +350,8 @@ pub mod SportNetBetting {
         }
 
         fn getMarket(self: @ContractState, marketId: u128) -> Market {
-            assert!(marketId <= self.market_count.read(), "Market does not exist");
+            assert!(marketId <= self.getMarketCount(), "Market does not exist");
             return self.markets.read(marketId);
-        }
-
-        fn getAllMarkets(self: @ContractState) -> Array<Market> {
-            let mut markets: Array<Market> = ArrayTrait::new();
-            let mut index: u128 = 0;
-            loop {
-                if index == self.market_count.read() {
-                    break;
-                }
-                let currMarket = self.markets.read(index);
-                markets.append(currMarket);
-                index.add_eq(1);
-            };
-            return markets;
         }
 
         fn getContractOwner(self: @ContractState) -> ContractAddress {

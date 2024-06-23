@@ -18,7 +18,7 @@
   
   .text {
     position: absolute;
-    top: 10%; 
+    top: 10%;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1;
@@ -26,15 +26,16 @@
   }
   
   .sportnet {
-    font-size: 6rem; 
-    font-family: 'Droid Sans', sans-serif; 
+    font-size: 6rem;
+    font-family: 'Droid Sans', sans-serif;
     color: #eeff00;
     text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #ff00ff, 0 0 50px #ff00ff, 0 0 60px #ff00ff, 0 0 70px #ff00ff;
     animation: glow 0.05s ease-in-out infinite alternate;
   }
+  
   .subtext {
-    font-size: 2rem; 
-    font-family: 'Droid Sans', sans-serif; 
+    font-size: 2rem;
+    font-family: 'Droid Sans', sans-serif;
     color: #00ff1a;
     text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff, 0 0 40px #eaff00, 0 0 50px #ff00ff, 0 0 60px #ff00ff, 0 0 70px #c3ff00;
     animation: glow 0.1s ease-in-out infinite alternate;
@@ -47,5 +48,83 @@
     to {
       text-shadow: 0 0 25px #ff00ff, 0 0 35px #ff00ff, 0 0 45px #ff00ff, 0 0 55px #eeff00, 0 0 65px #ff00ff, 0 0 75px #ff00ff, 0 0 85px #e1ff00;
     }
+  }
+  
+  /* Roadmap section styling */
+  .roadmap {
+    padding: 4rem 2rem;
+    background-color: #1a1a1a;
+    color: white;
+  }
+  
+  .roadmap h2 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  .timeline {
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 0;
+  }
+  
+  .timeline::after {
+    content: '';
+    position: absolute;
+    width: 6px;
+    background-color: #f1c40f;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .milestone {
+    padding: 2rem 0;
+    position: relative;
+    width: 50%;
+  }
+  
+  .milestone:nth-child(odd) {
+    left: 0;
+  }
+  
+  .milestone:nth-child(even) {
+    left: 50%;
+  }
+  
+  .milestone::before {
+    content: ' ';
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    right: -12px;
+    background-color: #f1c40f;
+    border-radius: 50%;
+    top: 15px;
+    transform: translateX(50%);
+    z-index: 1;
+  }
+  
+  .milestone:nth-child(even)::before {
+    left: -12px;
+  }
+  
+  .milestoneContent {
+    padding: 1rem 2rem;
+    background-color: #292929;
+    position: relative;
+    border-radius: 8px;
+  }
+  
+  .milestoneContent h3 {
+    margin-top: 0;
+    font-size: 1.5rem;
+  }
+  
+  .milestoneContent p {
+    margin-bottom: 0;
   }
   

@@ -6,7 +6,7 @@ import { faTwitter, faGithub } from '@fortawesome/free-brands-svg-icons';
 
 const Footer = () => {
   return (
-    <div className="bg-purple-700 text-white py-6 border-t-2 border-t-black" id="footer">
+    <footer className="bg-purple-700 text-white py-6 border-t-2 border-t-black w-full mt-auto">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center">
           <h6>© 2024 Sportnet. All rights reserved</h6>
@@ -38,7 +38,7 @@ const Footer = () => {
           </ul>
         </div>
       </div>
-    </div>
+    </footer>
   );
 };
 

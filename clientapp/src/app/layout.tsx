@@ -22,13 +22,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-black text-white`}>
+      <body className={`${inter.className} bg-black text-white flex flex-col min-h-screen`}>
         <StarknetProvider>
           <AthleteContextProvider>
             <UserContextProvider>
               <OwnerContextProvider>
                 <Navbar />
-                {children}
+                <main className="flex-grow">
+                  {children}
+                </main>
                 <Footer />
               </OwnerContextProvider>
             </UserContextProvider>
