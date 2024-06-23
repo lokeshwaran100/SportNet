@@ -8,7 +8,7 @@ const teamMembers = [
     role: 'Backend Developer & Smart Contracts',
     description: 'Expert in blockchain technology and backend systems.',
     github: 'https://github.com/lokeshwaran100',
-    twitter: 'https://twitter.com/johndoe'
+    twitter: 'https://twitter.com/cryptowithloki'
   },
   {
     image: '/images/2.png',
