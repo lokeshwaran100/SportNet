@@ -27,8 +27,8 @@ const page = () => {
   const [totalFunds, setTotalFunds] = useState(0);
   const [reputation, setReputation] = useState(0);
   const [bettingRevenue, setBettingRevenue] = useState(0);
-  const {myCampaigns} = useAthleteContext();
-  const [campaignId, setCampaignId]=useState(0);
+  const { myCampaigns } = useAthleteContext();
+  const [campaignId, setCampaignId] = useState(0);
 
   useEffect(() => {
 
@@ -42,19 +42,15 @@ const page = () => {
     setBettingRevenue(2000); // Sample betting revenue
   }, []);
 
-  const {contract}=useAthleteContext();
+  const { contract } = useAthleteContext();
 
-  const SCALE_FACTOR = BigInt(10 ** 18);
-  function toBigIntAmount(amount: number) {
-      return BigInt(Math.round(amount * Number(SCALE_FACTOR)));
-  }
 
   const calls = useMemo(() => {
-  //   console.log("the args are", ...args);
+    //   console.log("the args are", ...args);
     if (!contract) return [];
     return contract.populateTransaction["claim"]!(campaignId);
   }, [contract, campaignId]);
-  
+
   const {
     writeAsync,
     data: contractData,
@@ -75,20 +71,26 @@ const page = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-medium">Sponsors Count</h3>
+            <h3 className="text-lg font-medium">Total Sponsors</h3>
             <p className="text-2xl font-bold">{sponsorCount}</p>
           </div>
         </Card>
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-medium">Total Sponsored Funds</h3>
-            <p className="text-2xl font-bold">${totalFunds}</p>
+            <h3 className="text-lg font-medium">Total Campaigns</h3>
+            <p className="text-2xl font-bold">{myCampaigns.length}</p>
           </div>
         </Card>
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-medium">Betting Revenue</h3>
-            <p className="text-2xl font-bold">${bettingRevenue}</p>
+            <h3 className="text-lg font-medium">Total Sponsored Funds</h3>
+            <p className="text-2xl font-bold">{totalFunds} $STRK</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="p-4">
+            <h3 className="text-lg font-medium">Betting Platform Revenue</h3>
+            <p className="text-2xl font-bold">{bettingRevenue} $STRK</p>
           </div>
         </Card>
       </div>
@@ -104,9 +106,9 @@ const page = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableCell>Campaign Name</TableCell>
+                <TableCell>Campaign</TableCell>
+                <TableCell>Description</TableCell>
                 <TableCell>Funds</TableCell>
-                <TableCell>Sponsors</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHeader>
@@ -114,8 +116,8 @@ const page = () => {
               {myCampaigns && myCampaigns.map(campaign => (
                 <TableRow key={campaign.id}>
                   <TableCell>{campaign.title}</TableCell>
+                  <TableCell>{campaign.description}</TableCell>
                   <TableCell>${campaign.amount}</TableCell>
-                  <TableCell>{campaign.address}</TableCell>
                   <TableCell>
                     {campaign.isClaimed ? (
                       <Button disabled>Claimed</Button>
